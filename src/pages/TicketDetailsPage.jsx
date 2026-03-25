@@ -175,6 +175,28 @@ export default function TicketDetailsPage() {
               <p className="description-block">{ticket.issueDescription}</p>
             </div>
 
+            {ticket.screenshotUrl && (
+              <div className="detail-card">
+                <h2>Attached Screenshot</h2>
+                <a
+                  href={ticket.screenshotUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="secondary-btn screenshot-link-btn"
+                >
+                  Open Full Screenshot
+                </a>
+
+                <div className="ticket-screenshot-wrap">
+                  <img
+                    src={ticket.screenshotUrl}
+                    alt="Ticket attachment"
+                    className="ticket-screenshot"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="detail-card">
               <h2>Internal Notes</h2>
               <NotesList notes={ticket.notes || []} />

@@ -797,3 +797,47 @@
     text-align: left;
   }
 }
+
+.field-helper-text {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.image-preview-card {
+  margin-bottom: 18px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.image-preview-label {
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.image-preview {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  border: 1px solid #dbe2ea;
+  display: block;
+}
+
+.ticket-screenshot-wrap {
+  margin-top: 16px;
+}
+
+.ticket-screenshot {
+  width: 100%;
+  max-width: 760px;
+  display: block;
+  border-radius: 16px;
+  border: 1px solid #dbe2ea;
+}
+
+.screenshot-link-btn {
+  margin-top: 4px;
+}

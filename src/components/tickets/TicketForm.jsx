@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createTicket } from "../../services/ticketService";
+import { uploadTicketScreenshot } from "../../services/storageService";
 import generateTicketCode from "../../utils/generateTicketCode";
 import {
   TICKET_CATEGORIES,
@@ -17,9 +18,15 @@ const initialFormData = {
 
 export default function TicketForm() {
   const [formData, setFormData] = useState(initialFormData);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [formError, setFormError] = useState("");
   const [successData, setSuccessData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const previewUrl = useMemo(() => {
+    if (!selectedFile) return "";
+    return URL.createObjectURL(selectedFile);
+  }, [selectedFile]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -28,6 +35,32 @@ export default function TicketForm() {
       ...prev,
       [name]: value,
     }));
+  }
+
+  function handleFileChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setFormError("Only PNG, JPG, JPEG, or WEBP image files are allowed.");
+      setSelectedFile(null);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Image size must be 5MB or less.");
+      setSelectedFile(null);
+      return;
+    }
+
+    setFormError("");
+    setSelectedFile(file);
   }
 
   function validateForm() {
@@ -67,6 +100,15 @@ export default function TicketForm() {
     try {
       const ticketCode = generateTicketCode();
 
+      let screenshotUrl = "";
+      let screenshotPath = "";
+
+      if (selectedFile) {
+        const uploadResult = await uploadTicketScreenshot(selectedFile);
+        screenshotUrl = uploadResult.downloadURL;
+        screenshotPath = uploadResult.fullPath;
+      }
+
       const result = await createTicket({
         ticketCode,
         fullName: formData.fullName.trim(),
@@ -77,8 +119,8 @@ export default function TicketForm() {
         priority: formData.priority,
         status: "Open",
         assignedTechnician: "",
-        screenshotUrl: "",
-        screenshotPath: "",
+        screenshotUrl,
+        screenshotPath,
         notes: [],
       });
 
@@ -89,6 +131,7 @@ export default function TicketForm() {
       });
 
       setFormData(initialFormData);
+      setSelectedFile(null);
     } catch (error) {
       console.error("Error creating ticket:", error);
       setFormError("Something went wrong while submitting your ticket.");
@@ -187,6 +230,27 @@ export default function TicketForm() {
             required
           />
         </div>
+
+        <div className="form-group">
+          <label htmlFor="screenshot">Optional Screenshot</label>
+          <input
+            id="screenshot"
+            name="screenshot"
+            type="file"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+            onChange={handleFileChange}
+          />
+          <p className="field-helper-text">
+            Upload PNG, JPG, JPEG, or WEBP up to 5MB.
+          </p>
+        </div>
+
+        {previewUrl && (
+          <div className="image-preview-card">
+            <p className="image-preview-label">Selected Screenshot Preview</p>
+            <img src={previewUrl} alt="Selected screenshot preview" className="image-preview" />
+          </div>
+        )}
 
         {formError && <p className="form-error">{formError}</p>}
 
