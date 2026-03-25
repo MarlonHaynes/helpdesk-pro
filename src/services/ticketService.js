@@ -9,6 +9,7 @@ import {
   orderBy,
   updateDoc,
   serverTimestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
@@ -70,6 +71,15 @@ export async function updateTicket(ticketId, updates) {
 
   await updateDoc(docRef, {
     ...updates,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function addTicketNote(ticketId, noteData) {
+  const docRef = doc(db, "tickets", ticketId);
+
+  await updateDoc(docRef, {
+    notes: arrayUnion(noteData),
     updatedAt: serverTimestamp(),
   });
 }

@@ -649,3 +649,151 @@
     grid-template-columns: 1fr;
   }
 }
+
+.ticket-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ticket-details-subtitle {
+  color: #64748b;
+}
+
+.ticket-details-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 0.9fr;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.ticket-details-main,
+.ticket-details-sidebar {
+  display: grid;
+  gap: 20px;
+}
+
+.detail-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.detail-card h2 {
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.detail-list {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row span {
+  color: #64748b;
+}
+
+.detail-row strong {
+  color: #0f172a;
+  text-align: right;
+}
+
+.description-block {
+  white-space: pre-wrap;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.notes-list {
+  display: grid;
+  gap: 14px;
+}
+
+.note-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.note-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.note-card-top strong {
+  color: #0f172a;
+}
+
+.note-card-top span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.note-card p {
+  color: #334155;
+}
+
+.note-form-wrap {
+  margin-top: 20px;
+}
+
+.add-note-form {
+  margin-top: 8px;
+}
+
+.admin-control-panel {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.read-only-message {
+  margin-top: 16px;
+  color: #64748b;
+}
+
+.success-inline-message {
+  margin-top: 12px;
+  margin-bottom: 6px;
+  color: #15803d;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .ticket-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ticket-details-header {
+    flex-direction: column;
+  }
+
+  .detail-row {
+    flex-direction: column;
+  }
+
+  .detail-row strong {
+    text-align: left;
+  }
+}
