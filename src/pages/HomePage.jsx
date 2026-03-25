@@ -5,13 +5,13 @@ export default function HomePage() {
     <div className="home-page">
       <section className="hero-section">
         <div className="hero-content">
-          <span className="eyebrow">Modern IT Support Workflow</span>
-          <h1>Professional help desk ticket management for support teams.</h1>
+          <span className="eyebrow">IT Support Workflow Software</span>
+          <h1>Modern help desk ticket management for internal support teams.</h1>
           <p>
             HelpDesk Pro is a portfolio-quality IT support ticket system built
-            with React, Firebase, and a modern SaaS-style interface. Users can
-            submit support requests, track tickets, and admins can manage
-            issues through a clean dashboard.
+            with React and Firebase. It allows users to submit support requests,
+            track ticket status, and gives administrators a clean dashboard for
+            managing issue resolution.
           </p>
 
           <div className="hero-actions">
@@ -19,20 +19,36 @@ export default function HomePage() {
               Submit a Ticket
             </Link>
             <Link to="/my-tickets" className="secondary-btn">
-              View My Tickets
+              Track Existing Tickets
             </Link>
+          </div>
+
+          <div className="hero-mini-stats">
+            <div className="mini-stat-card">
+              <strong>React + Vite</strong>
+              <span>Fast frontend workflow</span>
+            </div>
+            <div className="mini-stat-card">
+              <strong>Firebase</strong>
+              <span>Firestore, Auth, Storage</span>
+            </div>
+            <div className="mini-stat-card">
+              <strong>Admin Workflow</strong>
+              <span>Status, notes, assignment</span>
+            </div>
           </div>
         </div>
 
         <div className="hero-panel">
           <div className="hero-card">
-            <h3>System Snapshot</h3>
+            <h3>What this system includes</h3>
             <ul className="hero-list">
-              <li>Ticket submission workflow</li>
-              <li>Status tracking</li>
-              <li>Priority and category management</li>
-              <li>Admin dashboard controls</li>
-              <li>Optional screenshot uploads</li>
+              <li>Public ticket submission form</li>
+              <li>User ticket lookup by email</li>
+              <li>Admin dashboard with filters</li>
+              <li>Technician assignment workflow</li>
+              <li>Internal support notes</li>
+              <li>Screenshot uploads for issue context</li>
             </ul>
           </div>
         </div>
@@ -41,39 +57,43 @@ export default function HomePage() {
       <section className="feature-grid-section">
         <div className="section-heading">
           <span className="section-label">Core Features</span>
-          <h2>Built to look and feel like real business software.</h2>
+          <h2>Designed to feel like real business software.</h2>
+          <p className="section-support-text">
+            This project demonstrates practical support workflow design, CRUD
+            operations, protected admin access, and a polished responsive UI.
+          </p>
         </div>
 
         <div className="feature-grid">
           <article className="feature-card">
             <h3>Ticket Submission</h3>
             <p>
-              Users can submit support requests with issue details, category,
-              priority, and optional screenshots.
+              Users can submit support issues with detailed descriptions,
+              priority levels, categories, and optional screenshots.
             </p>
           </article>
 
           <article className="feature-card">
             <h3>Ticket Tracking</h3>
             <p>
-              Users can search by email to view previously submitted tickets and
-              track status updates.
+              Users can search by email to view previously submitted requests
+              and monitor ticket status changes.
             </p>
           </article>
 
           <article className="feature-card">
             <h3>Admin Management</h3>
             <p>
-              Admins can review all tickets, update statuses, assign
+              Support admins can review all tickets, update statuses, assign
               technicians, and document internal notes.
             </p>
           </article>
 
           <article className="feature-card">
-            <h3>Portfolio Ready</h3>
+            <h3>Portfolio Value</h3>
             <p>
-              Designed to demonstrate React, Firebase, CRUD workflows, auth,
-              storage, filtering, and dashboard UI.
+              Demonstrates routing, Firebase integration, CRUD, auth, file
+              uploads, filtering, and dashboard-style UI design.
             </p>
           </article>
         </div>

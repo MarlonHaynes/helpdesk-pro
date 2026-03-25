@@ -42,12 +42,14 @@ export default function AdminDashboardPage() {
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((ticket) => {
+      const searchValue = searchTerm.toLowerCase();
+
       const matchesSearch =
         !searchTerm ||
-        ticket.ticketCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.issueTitle?.toLowerCase().includes(searchTerm.toLowerCase());
+        ticket.ticketCode?.toLowerCase().includes(searchValue) ||
+        ticket.fullName?.toLowerCase().includes(searchValue) ||
+        ticket.email?.toLowerCase().includes(searchValue) ||
+        ticket.issueTitle?.toLowerCase().includes(searchValue);
 
       const matchesStatus = !selectedStatus || ticket.status === selectedStatus;
       const matchesCategory =
@@ -78,8 +80,8 @@ export default function AdminDashboardPage() {
           <span className="section-label">Admin Dashboard</span>
           <h1>Ticket Management Overview</h1>
           <p>
-            Review support requests, search tickets, filter by workflow state,
-            and open any ticket for full management details.
+            Review support requests, monitor workflow activity, and manage
+            ticket resolution through a clean centralized dashboard.
           </p>
         </div>
       </section>
@@ -104,20 +106,21 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="stats-grid dashboard-secondary-stats">
-        <div className="stat-card">
+        <div className="stat-card stat-card-compact">
           <span className="stat-label">High Priority</span>
           <strong>{stats.highPriority}</strong>
         </div>
-        <div className="stat-card">
+        <div className="stat-card stat-card-compact">
           <span className="stat-label">Filtered Results</span>
           <strong>{filteredTickets.length}</strong>
         </div>
       </section>
 
-      <section className="page-section">
+      <section className="page-section dashboard-main-section">
         <div className="section-heading dashboard-table-heading">
+          <span className="section-label">Ticket Operations</span>
           <h2>All Tickets</h2>
-          <p>Search and filter tickets before opening the full details view.</p>
+          <p>Search, filter, and open tickets for detailed management.</p>
         </div>
 
         <TicketFilters
@@ -132,11 +135,13 @@ export default function AdminDashboardPage() {
           onReset={handleResetFilters}
         />
 
-        {isLoading ? (
-          <p className="loading-text">Loading tickets...</p>
-        ) : (
-          <TicketTable tickets={filteredTickets} />
-        )}
+        <div className="table-panel">
+          {isLoading ? (
+            <p className="loading-text">Loading tickets...</p>
+          ) : (
+            <TicketTable tickets={filteredTickets} />
+          )}
+        </div>
       </section>
     </div>
   );

@@ -33,12 +33,12 @@ export default function MyTicketsPage() {
         <span className="section-label">User Portal</span>
         <h1>My Tickets</h1>
         <p>
-          Enter the email address used during ticket submission to view your
-          support requests and current statuses.
+          Enter the email address used when submitting a support request to view
+          ticket history and current statuses.
         </p>
       </section>
 
-      <section className="page-section">
+      <section className="page-section lookup-card">
         <form onSubmit={handleSubmit} className="lookup-form">
           <div className="form-group">
             <label htmlFor="lookupEmail">Email Address</label>
@@ -63,11 +63,18 @@ export default function MyTicketsPage() {
       {hasSearched && !isLoading && (
         <section className="tickets-results-section">
           {tickets.length ? (
-            <div className="ticket-card-grid">
-              {tickets.map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
-              ))}
-            </div>
+            <>
+              <div className="results-header">
+                <h2>Found {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}</h2>
+                <p>Review your support requests below.</p>
+              </div>
+
+              <div className="ticket-card-grid">
+                {tickets.map((ticket) => (
+                  <TicketCard key={ticket.id} ticket={ticket} />
+                ))}
+              </div>
+            </>
           ) : (
             <div className="page-section empty-state-card">
               <h2>No tickets found</h2>

@@ -122,7 +122,7 @@ export default function TicketDetailsPage() {
 
   return (
     <div className="ticket-details-page">
-      <section className="page-section">
+      <section className="page-section ticket-details-shell">
         <div className="ticket-details-header">
           <div>
             <span className="section-label">Ticket Details</span>
@@ -213,7 +213,7 @@ export default function TicketDetailsPage() {
           </div>
 
           <aside className="ticket-details-sidebar">
-            <div className="detail-card">
+            <div className="detail-card workflow-card">
               <h2>Workflow</h2>
 
               <div className="detail-list">
