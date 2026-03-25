@@ -21,7 +21,9 @@ export async function createTicket(ticketData) {
     updatedAt: serverTimestamp(),
   });
 
-  return docRef;
+  return {
+    id: docRef.id,
+  };
 }
 
 export async function getAllTickets() {
