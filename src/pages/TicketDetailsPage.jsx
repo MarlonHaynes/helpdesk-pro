@@ -125,10 +125,10 @@ export default function TicketDetailsPage() {
       <section className="page-section ticket-details-shell">
         <div className="ticket-details-header">
           <div>
-            <span className="section-label">Ticket Details</span>
+            <span className="section-label">Case Intelligence</span>
             <h1>{ticket.issueTitle}</h1>
             <p className="ticket-details-subtitle">
-              {ticket.ticketCode} • Submitted by {ticket.fullName}
+              {ticket.ticketCode} • Request submitted by {ticket.fullName}
             </p>
           </div>
 
@@ -149,7 +149,7 @@ export default function TicketDetailsPage() {
                 </div>
                 <div className="detail-row">
                   <span>Email</span>
-                  <strong>{ticket.email}</strong>
+                  <strong>{ticket.requesterEmail || ticket.email}</strong>
                 </div>
                 <div className="detail-row">
                   <span>Category</span>
@@ -171,13 +171,13 @@ export default function TicketDetailsPage() {
             </div>
 
             <div className="detail-card">
-              <h2>Description</h2>
+              <h2>Issue Narrative</h2>
               <p className="description-block">{ticket.issueDescription}</p>
             </div>
 
             {ticket.screenshotUrl && (
               <div className="detail-card">
-                <h2>Attached Screenshot</h2>
+                <h2>Visual Evidence</h2>
                 <a
                   href={ticket.screenshotUrl}
                   target="_blank"
@@ -198,7 +198,7 @@ export default function TicketDetailsPage() {
             )}
 
             <div className="detail-card">
-              <h2>Internal Notes</h2>
+              <h2>Internal Collaboration Notes</h2>
               <NotesList notes={ticket.notes || []} />
 
               {currentUser && (
@@ -214,7 +214,7 @@ export default function TicketDetailsPage() {
 
           <aside className="ticket-details-sidebar">
             <div className="detail-card workflow-card">
-              <h2>Workflow</h2>
+              <h2>Workflow Control</h2>
 
               <div className="detail-list">
                 <div className="detail-row">

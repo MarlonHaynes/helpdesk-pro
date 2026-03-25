@@ -15,11 +15,21 @@ export default function MyTicketsPage() {
     setHasSearched(true);
     setIsLoading(true);
 
+    const trimmedEmail = email.trim();
+    const normalizedEmail = trimmedEmail.toLowerCase();
+
     try {
-      const results = await getTicketsByEmail(email.trim().toLowerCase());
+      const results = await getTicketsByEmail(normalizedEmail);
       setTickets(results);
     } catch (error) {
-      console.error("Error fetching tickets:", error);
+      console.error("Error fetching tickets in MyTicketsPage", {
+        inputEmail: email,
+        trimmedEmail,
+        normalizedEmail,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        error,
+      });
       setErrorMessage("Unable to fetch tickets right now.");
       setTickets([]);
     } finally {
@@ -30,11 +40,11 @@ export default function MyTicketsPage() {
   return (
     <div className="my-tickets-page">
       <section className="page-section page-intro-card">
-        <span className="section-label">User Portal</span>
-        <h1>My Tickets</h1>
+        <span className="section-label">My Tickets</span>
+        <h1>Check in on your support requests.</h1>
         <p>
-          Enter the email address used when submitting a support request to view
-          ticket history and current statuses.
+          Enter the email address you used when submitting your ticket and
+          we&apos;ll show you everything associated with it.
         </p>
       </section>
 
@@ -45,7 +55,7 @@ export default function MyTicketsPage() {
             <input
               id="lookupEmail"
               type="email"
-              placeholder="Enter your email address"
+              placeholder="you@company.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
@@ -66,7 +76,7 @@ export default function MyTicketsPage() {
             <>
               <div className="results-header">
                 <h2>Found {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}</h2>
-                <p>Review your support requests below.</p>
+                <p>Here&apos;s everything we have on file for that email address.</p>
               </div>
 
               <div className="ticket-card-grid">
@@ -78,7 +88,10 @@ export default function MyTicketsPage() {
           ) : (
             <div className="page-section empty-state-card">
               <h2>No tickets found</h2>
-              <p>No support requests were found for that email address.</p>
+              <p>
+                We couldn&apos;t find any requests for that email address. Double-check
+                the spelling, or submit a new ticket to get started.
+              </p>
             </div>
           )}
         </section>

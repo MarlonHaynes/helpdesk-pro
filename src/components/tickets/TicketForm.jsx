@@ -112,7 +112,7 @@ export default function TicketForm() {
       const result = await createTicket({
         ticketCode,
         fullName: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
+        requesterEmail: formData.email.trim(),
         issueTitle: formData.issueTitle.trim(),
         issueDescription: formData.issueDescription.trim(),
         category: formData.category,
@@ -127,7 +127,7 @@ export default function TicketForm() {
       setSuccessData({
         id: result.id,
         ticketCode,
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email.trim(),
       });
 
       setFormData(initialFormData);

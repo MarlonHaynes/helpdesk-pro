@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
         !searchTerm ||
         ticket.ticketCode?.toLowerCase().includes(searchValue) ||
         ticket.fullName?.toLowerCase().includes(searchValue) ||
-        ticket.email?.toLowerCase().includes(searchValue) ||
+        (ticket.requesterEmail || ticket.email)?.toLowerCase().includes(searchValue) ||
         ticket.issueTitle?.toLowerCase().includes(searchValue);
 
       const matchesStatus = !selectedStatus || ticket.status === selectedStatus;
@@ -77,11 +77,11 @@ export default function AdminDashboardPage() {
     <div className="dashboard-page">
       <section className="dashboard-header-card">
         <div>
-          <span className="section-label">Admin Dashboard</span>
-          <h1>Ticket Management Overview</h1>
+          <span className="section-label">Support Dashboard</span>
+          <h1>Ticket Queue Overview</h1>
           <p>
-            Review support requests, monitor workflow activity, and manage
-            ticket resolution through a clean centralized dashboard.
+            Keep track of incoming requests, check workload at a glance, and
+            make sure every ticket gets the attention it deserves.
           </p>
         </div>
       </section>
@@ -92,7 +92,7 @@ export default function AdminDashboardPage() {
           <strong>{stats.total}</strong>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Open Tickets</span>
+          <span className="stat-label">Open</span>
           <strong>{stats.open}</strong>
         </div>
         <div className="stat-card">
@@ -103,24 +103,21 @@ export default function AdminDashboardPage() {
           <span className="stat-label">Resolved</span>
           <strong>{stats.resolved}</strong>
         </div>
-      </section>
-
-      <section className="stats-grid dashboard-secondary-stats">
-        <div className="stat-card stat-card-compact">
+        <div className="stat-card">
           <span className="stat-label">High Priority</span>
           <strong>{stats.highPriority}</strong>
         </div>
-        <div className="stat-card stat-card-compact">
-          <span className="stat-label">Filtered Results</span>
+        <div className="stat-card">
+          <span className="stat-label">Showing</span>
           <strong>{filteredTickets.length}</strong>
         </div>
       </section>
 
       <section className="page-section dashboard-main-section">
         <div className="section-heading dashboard-table-heading">
-          <span className="section-label">Ticket Operations</span>
-          <h2>All Tickets</h2>
-          <p>Search, filter, and open tickets for detailed management.</p>
+          <span className="section-label">Ticket Queue</span>
+          <h2>All Requests</h2>
+          <p>Filter and search through open, in-progress, and resolved tickets.</p>
         </div>
 
         <TicketFilters

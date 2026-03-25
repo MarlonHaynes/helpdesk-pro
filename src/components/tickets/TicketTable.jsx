@@ -30,7 +30,7 @@ export default function TicketTable({ tickets }) {
               <td>
                 <div className="ticket-requester-cell">
                   <strong>{ticket.fullName}</strong>
-                  <span>{ticket.email}</span>
+                  <span>{ticket.requesterEmail || ticket.email}</span>
                 </div>
               </td>
               <td>{ticket.issueTitle}</td>

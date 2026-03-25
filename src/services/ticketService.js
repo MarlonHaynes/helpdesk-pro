@@ -15,9 +15,55 @@ import { db } from "../firebase/firebase";
 
 const ticketsCollection = collection(db, "tickets");
 
+function normalizeEmail(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function mapTicketSnapshot(snapshot) {
+  return snapshot.docs.map((docItem) => ({
+    id: docItem.id,
+    ...docItem.data(),
+  }));
+}
+
+function getCreatedAtMillis(ticket) {
+  const createdAt = ticket?.createdAt;
+
+  if (!createdAt) {
+    return 0;
+  }
+
+  if (typeof createdAt.toMillis === "function") {
+    return createdAt.toMillis();
+  }
+
+  const asDate = new Date(createdAt);
+  const time = asDate.getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function sortByCreatedAtDesc(tickets) {
+  return [...tickets].sort((a, b) => getCreatedAtMillis(b) - getCreatedAtMillis(a));
+}
+
+async function queryTicketsByField(fieldName, value) {
+  const q = query(ticketsCollection, where(fieldName, "==", value));
+  const snapshot = await getDocs(q);
+  return mapTicketSnapshot(snapshot);
+}
+
 export async function createTicket(ticketData) {
+  const requesterEmail = String(
+    ticketData.requesterEmail ?? ticketData.email ?? ""
+  ).trim();
+
+  const requesterEmailNormalized = normalizeEmail(requesterEmail);
+
   const docRef = await addDoc(ticketsCollection, {
     ...ticketData,
+    requesterEmail,
+    requesterEmailNormalized,
+    email: requesterEmail,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -31,10 +77,7 @@ export async function getAllTickets() {
   const q = query(ticketsCollection, orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docItem) => ({
-    id: docItem.id,
-    ...docItem.data(),
-  }));
+  return mapTicketSnapshot(snapshot);
 }
 
 export async function getTicketById(ticketId) {
@@ -52,18 +95,65 @@ export async function getTicketById(ticketId) {
 }
 
 export async function getTicketsByEmail(email) {
-  const q = query(
-    ticketsCollection,
-    where("email", "==", email),
-    orderBy("createdAt", "desc")
-  );
+  const rawTrimmedEmail = String(email ?? "").trim();
+  const normalizedEmail = normalizeEmail(rawTrimmedEmail);
 
-  const snapshot = await getDocs(q);
+  if (!rawTrimmedEmail) {
+    return [];
+  }
 
-  return snapshot.docs.map((docItem) => ({
-    id: docItem.id,
-    ...docItem.data(),
-  }));
+  const dedupedTickets = new Map();
+
+  const mergeTickets = (tickets) => {
+    tickets.forEach((ticket) => {
+      dedupedTickets.set(ticket.id, ticket);
+    });
+  };
+
+  try {
+    const normalizedMatches = await queryTicketsByField(
+      "requesterEmailNormalized",
+      normalizedEmail
+    );
+    mergeTickets(normalizedMatches);
+
+    // Backward compatibility for older ticket records without requesterEmailNormalized.
+    if (!dedupedTickets.size) {
+      const fallbackQueries = [
+        ["requesterEmail", rawTrimmedEmail],
+        ["requesterEmail", normalizedEmail],
+        ["email", rawTrimmedEmail],
+        ["email", normalizedEmail],
+        ["createdBy.email", rawTrimmedEmail],
+        ["createdBy.email", normalizedEmail],
+      ];
+
+      const seenFallbackKeys = new Set();
+
+      for (const [fieldName, fieldValue] of fallbackQueries) {
+        const dedupeKey = `${fieldName}:${fieldValue}`;
+
+        if (seenFallbackKeys.has(dedupeKey) || !fieldValue) {
+          continue;
+        }
+
+        seenFallbackKeys.add(dedupeKey);
+        const fallbackMatches = await queryTicketsByField(fieldName, fieldValue);
+        mergeTickets(fallbackMatches);
+      }
+    }
+
+    return sortByCreatedAtDesc(Array.from(dedupedTickets.values()));
+  } catch (error) {
+    console.error("Firestore getTicketsByEmail failed", {
+      rawTrimmedEmail,
+      normalizedEmail,
+      errorCode: error?.code,
+      errorMessage: error?.message,
+      error,
+    });
+    throw error;
+  }
 }
 
 export async function updateTicket(ticketId, updates) {

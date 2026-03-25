@@ -42,9 +42,9 @@ export default function AdminLoginPage() {
     <section className="auth-page">
       <div className="auth-card">
         <div className="auth-card-header">
-          <span className="section-label">Admin Access</span>
-          <h1>Sign in to manage tickets</h1>
-          <p>Use your Firebase admin credentials to access the dashboard.</p>
+          <span className="section-label">Admin Login</span>
+          <h1>Sign in to the dashboard</h1>
+          <p>Access the support management area with your admin credentials.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">

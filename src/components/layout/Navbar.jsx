@@ -19,10 +19,16 @@ export default function Navbar() {
     <header className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          HelpDesk Pro
+          <span className="brand-mark" aria-hidden="true">
+            <img src="/logo.png" alt="HelpDesk Pro Logo" className="logo-img" />
+          </span>
+          <span className="brand-text-wrap">
+            <strong>HelpDesk Pro</strong>
+            <span>Customer Support</span>
+          </span>
         </Link>
 
-        <nav className="navbar-links">
+        <nav className="navbar-links" aria-label="Primary">
           <NavLink to="/" className="nav-link">
             Home
           </NavLink>
@@ -35,6 +41,8 @@ export default function Navbar() {
             My Tickets
           </NavLink>
 
+          <span className="navbar-divider" aria-hidden="true" />
+
           {currentUser ? (
             <>
               <NavLink to="/admin/dashboard" className="nav-link admin-link">
@@ -46,7 +54,7 @@ export default function Navbar() {
             </>
           ) : (
             <NavLink to="/admin/login" className="nav-link admin-link">
-              Admin
+              Login
             </NavLink>
           )}
         </nav>
