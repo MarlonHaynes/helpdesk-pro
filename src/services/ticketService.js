@@ -73,3 +73,15 @@ export async function updateTicket(ticketId, updates) {
     updatedAt: serverTimestamp(),
   });
 }
+
+export async function getTicketStats() {
+  const tickets = await getAllTickets();
+
+  return {
+    total: tickets.length,
+    open: tickets.filter((ticket) => ticket.status === "Open").length,
+    inProgress: tickets.filter((ticket) => ticket.status === "In Progress").length,
+    resolved: tickets.filter((ticket) => ticket.status === "Resolved").length,
+    highPriority: tickets.filter((ticket) => ticket.priority === "High").length,
+  };
+}
