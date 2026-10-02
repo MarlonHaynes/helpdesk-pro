@@ -5,9 +5,10 @@ import { loginAdmin } from "../services/authService";
 export default function AdminLoginPage() {
   const navigate = useNavigate();
 
+  // Demo credentials are pre-filled so reviewers can sign in with a single click.
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: "AdminMarlon@gmail.com",
+    password: "Admin123",
   });
 
   const [errorMessage, setErrorMessage] = useState("");
