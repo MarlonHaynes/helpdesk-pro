@@ -30,6 +30,13 @@ Local tooling (not shipped to browser)
 | `src/services/ticketService.js` | Ticket CRUD, transitions, escalation, events, notes |
 | `src/services/auditService.js` | Append-only audit log writes/reads |
 | `src/services/userService.js` | Staff lookup for assignment |
+| `src/services/kbService.js` | Knowledge articles (role-aware) + feedback |
+| `src/services/assetService.js` | Asset inventory, assign/return, linked incidents |
+| `src/services/identityService.js` | Simulated M365/Entra directory operations |
+| `src/services/approvalService.js` | Approval request + staff decision |
+| `src/services/notificationService.js` | In-app notifications (best-effort) |
+| `src/workbench/scenarios.js` | Troubleshooting scenario library (static content) |
+| `src/utils/csv.js` | CSV export helper |
 | `src/components/layout/AuthContext.jsx` | Auth + role hydration from claims |
 | `src/components/layout/AppShell.jsx` | Role-aware sidebar shell |
 | `src/routes/ProtectedRoute.jsx` | Client route guard (staff/admin/permission) |
@@ -43,8 +50,12 @@ Local tooling (not shipped to browser)
   - `tickets/{id}/events/{id}` — immutable per-ticket timeline (subcollection).
   - `tickets/{id}/notes/{id}` — internal vs requester-facing notes (subcollection).
 - `auditLogs/{id}` — global append-only privileged-action trail.
-- `assets/{id}`, `knowledgeArticles/{id}`, `approvals/{id}`,
-  `notifications/{id}`, `simulatedDirectoryUsers/{id}` — enterprise modules.
+- `assets/{id}`, `knowledgeArticles/{id}` (+ `feedback/{id}` subcollection),
+  `approvals/{id}`, `notifications/{id}`, `simulatedDirectoryUsers/{id}` —
+  enterprise modules.
+- Troubleshooting scenarios live in code (`src/workbench/scenarios.js`), not
+  Firestore; completing one from a ticket writes a ticket event + internal note
+  + audit entry.
 - `slaPolicies/{id}`, `departments/{id}`, `supportTeams/{id}`,
   `applicationSettings/{id}` — configuration (admin-managed).
 

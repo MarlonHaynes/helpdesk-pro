@@ -14,35 +14,36 @@ Cloud Firestore rules and custom-claim roles.
 
 ---
 
-## Status (honest)
+## Status
 
-This is an in-progress enterprise upgrade delivered in phases. What is
-**implemented, working, and tested** today:
+All ten master-prompt upgrade categories are **implemented and working**, backed
+by 36 unit tests and 37 emulator-backed security/lifecycle tests (`$0` Spark-tier
+design, emulator-first). Highlights:
 
-- ✅ **Security foundation** — Firestore + Storage security rules, custom-claim
-  RBAC (5 roles), server-validated priority & status transitions, append-only
-  audit log. Proven by an emulator-backed rules test suite.
-- ✅ **ITIL ticketing** — Incident / Service Request / Problem / Change record
-  types, 9-state lifecycle with enforced transitions, impact×urgency→priority
-  matrix, assignment, escalation with support-group routing, resolution, requester
-  confirm/reopen, per-ticket immutable event timeline, internal vs requester-facing
-  notes.
-- ✅ **SLA engine** — configurable policies, business-hours + holiday math,
-  response/resolution deadlines, breach & near-breach, recomputed on read (no
-  dependency on a browser staying open).
-- ✅ **Dashboard & analytics** — totals, open/escalated/overdue, SLA compliance,
-  MTTR, first-response, time-to-close, reopen rate, by-priority/category/group,
-  aging buckets — all computed from persisted data.
-- ✅ **Audit log viewer** (admin).
-- ✅ **Demo access** — 5 seeded role accounts with one-click sign-in; idempotent
-  seeding of ~30 employees, 32 assets, 15 KB articles, 30 directory users, and
-  70 tickets with full event trails.
+- ✅ **Security & RBAC** — Firestore/Storage rules, custom-claim roles (5),
+  server-validated priority & transitions, append-only audit log.
+- ✅ **ITIL ticketing** — 4 record types, 9-state enforced lifecycle,
+  impact×urgency→priority, assignment, escalation + routing, resolution,
+  confirm/reopen, immutable timeline, internal vs requester notes.
+- ✅ **SLA** — configurable policies, business-hours/holiday math, breach &
+  near-breach, recomputed on read.
+- ✅ **Troubleshooting Workbench** — interactive diagnostics with simulated
+  tools; 8 scenarios incl. demo A–F; records into tickets.
+- ✅ **Knowledge Base** — role-aware search, categories, feedback, ticket links.
+- ✅ **Asset Management** — inventory, detail, warranty, linked incidents.
+- ✅ **Microsoft 365 / Entra ID Lab** — simulated directory operations (L2+), audited.
+- ✅ **Reporting** — filters, charts, drill-down, per-tech workload, CSV export.
+- ✅ **Approvals + Notifications + Automation** — request/decide, in-app
+  notification center, workflow-triggered notifications.
+- ✅ **Recruiter experience** — one-click role sign-in + in-app Guided Demo.
 
-Planned in later phases (scaffolding/data model already present; dedicated UIs
-not yet built — **not** claimed as finished): Troubleshooting Workbench,
-Knowledge Base browsing UI, Asset Management UI, Microsoft 365 / Entra ID
-Administration Lab UI, approval-workflow UI, and the extended reporting/CSV
-export screens. See [FEATURES.md](FEATURES.md) for the full matrix.
+Documented free-tier trade-offs (not missing features): automatic SLA escalation
+*without a user present* needs a scheduler (Blaze/cron), and external email
+delivery is not wired (in-app notifications are the baseline). See
+[FEATURES.md](FEATURES.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
+
+**Not deployed to hosted infrastructure in this environment** — the owner
+deploys. Local build, tests, rules suite, and seed are all verified.
 
 ---
 

@@ -17,7 +17,7 @@ npm test          # run once
 npm run test:watch
 ```
 
-Current result: **36 tests passing.**
+Current result: **36 unit tests passing.**
 
 ## Security rules tests (`npm run test:rules`)
 
@@ -32,16 +32,23 @@ Current result: **36 tests passing.**
 - employees cannot change status/priority arbitrarily
 - audit entries are append-only (no update/delete, no actor spoofing)
 - asset/config collections are role-gated
+- knowledge-base visibility + feedback subcollection
+- approvals (no self-approval), simulated directory ops (L2+), notifications
+- **end-to-end lifecycle** (`lifecycle.test.js`): employee opens → L1 assigns/
+  responds/escalates → L2 resolves → employee confirms, through the real rules,
+  asserting final state + event/audit trail
 
 ```bash
 npm run test:rules
 ```
 
-Current result: **21 tests passing.** Requires a JDK (Firestore emulator).
+Current result: **37 tests passing** across 2 files. Requires a JDK (Firestore
+emulator). Test files run sequentially (`fileParallelism: false`) because they
+share one emulator and call `clearFirestore()`.
 
 > The emulator uses Firestore port **8089** (8080 was occupied during
-> development); see `firebase.json`. The test reads `FIRESTORE_EMULATOR_HOST`
-> that `emulators:exec` exports, so it follows whatever port is configured.
+> development); see `firebase.json`. The tests read `FIRESTORE_EMULATOR_HOST`
+> that `emulators:exec` exports, so they follow whatever port is configured.
 
 ## Build verification
 
@@ -52,7 +59,9 @@ npm run build     # Vite production build — succeeds
 
 ## Not yet automated
 
-End-to-end browser tests (e.g. Playwright) for the full click-through loop are
-planned. In-browser verification during development was limited to the dev
-server serving/transforming the app; a full recruiter click-through should be
-run manually per [DEMO_GUIDE.md](DEMO_GUIDE.md) until E2E tests are added.
+Full **browser** E2E (e.g. Playwright driving a real browser) is not included.
+The runnable emulator-backed `lifecycle.test.js` covers the critical journey at
+the rules+data layer. In-browser verification during development was limited to
+the dev server serving/transforming the app (the Claude browser extension was
+not connected in the build environment). Run a manual click-through per
+[DEMO_GUIDE.md](DEMO_GUIDE.md) in a browser before presenting.

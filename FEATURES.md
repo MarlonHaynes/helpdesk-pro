@@ -1,17 +1,21 @@
 # Feature Matrix
 
-Honest status of each area. ✅ implemented & working · 🟡 data model/logic present,
-dedicated UI pending · ⬜ planned.
+Status of each area. ✅ implemented & working · 🟡 works with a documented
+free-tier limitation · ⬜ not built.
 
-## Security & access
+All 10 master-prompt upgrade categories are implemented. Remaining 🟡 items are
+free-tier trade-offs documented in [DEPLOYMENT.md](DEPLOYMENT.md), not missing
+features.
+
+## 1. Security & RBAC
 - ✅ Custom-claim RBAC (administrator, L1, L2, L3, employee)
-- ✅ Firestore + Storage security rules (server enforcement)
+- ✅ Firestore + Storage security rules (server enforcement), default-deny
 - ✅ Server-validated priority and status transitions
 - ✅ Append-only, tamper-proof audit log
 - ✅ Seeded demo role accounts + one-click sign-in
-- ✅ Security regression tests (emulator)
+- ✅ Security regression tests + an end-to-end lifecycle test (emulator)
 
-## ITIL incident management
+## 2. ITIL incident management
 - ✅ Record types: Incident / Service Request / Problem / Change Request
 - ✅ 9-state lifecycle with enforced transitions
 - ✅ Impact × urgency → P1–P4 priority matrix (configurable policy)
@@ -20,39 +24,63 @@ dedicated UI pending · ⬜ planned.
 - ✅ Immutable per-ticket event timeline
 - ✅ Internal vs requester-facing notes
 
-## SLA
+## 3. SLA management
 - ✅ Configurable policies (response/resolution targets)
 - ✅ Business-hours + holiday + weekend math
-- ✅ Breach / near-breach, computed on read
-- ✅ SLA badges & countdowns in UI
-- 🟡 Automatic escalation on breach (logic ready; scheduled trigger documented as Blaze/cron)
+- ✅ Breach / near-breach, countdowns, computed on read
+- 🟡 Automatic escalation on breach *without a user present* needs a scheduler
+  (Blaze Scheduled Functions or external cron). On-read evaluation + the SLA-risk
+  queue filter cover detection on the free tier.
 
-## Dashboards & analytics
-- ✅ Totals, open, escalated, overdue, backlog
-- ✅ SLA compliance %, MTTR, avg first response, avg time to close, reopen rate
-- ✅ By priority / category / support group, aging buckets
-- 🟡 Date-range/department/technician filter screens + CSV export (queue search is implemented; dedicated report screens pending)
+## 4. Troubleshooting Workbench
+- ✅ Interactive stage-based engine (info / diagnostic / decision / resolution)
+- ✅ Safe simulated tools (ipconfig, nslookup, ping, tracert, netstat,
+  Test-NetConnection, Get-Service, Event Viewer, Task Manager, Device Manager)
+- ✅ 8 scenarios incl. demo A–F (DNS, lockout, Outlook auth, VPN, P1 outage, onboarding)
+- ✅ Launch from a ticket; records exercise to timeline + internal notes + audit
 
-## Support operations (L1/L2/L3)
+## 5. L1/L2/L3 support operations
 - ✅ Support groups & routing on escalation
-- ✅ Role-scoped queues and actions
-- 🟡 Per-technician workload views
+- ✅ Role-scoped queues and actions; queue filters incl. SLA risk
+- ✅ Per-technician workload table (Reports)
 
-## Knowledge base
-- 🟡 Articles seeded (15) with visibility/status/version; browsing & search UI pending
-- ⬜ Article authoring/approval UI, helpful/not-helpful feedback UI
+## 6. Knowledge base
+- ✅ Role-aware listing (employees: published/public; staff: incl. internal)
+- ✅ Search, categories, tags, article detail, version/author/last-reviewed
+- ✅ Helpful / not-helpful feedback (append-only subcollection + rules)
+- ✅ Linked from Workbench scenarios and tickets
 
-## Asset management
-- 🟡 Assets seeded (32) with full lifecycle fields + ticket linkage; management UI pending
+## 7. IT asset management
+- ✅ Inventory list, search, filter (type/department/status)
+- ✅ Asset detail with full lifecycle fields, warranty state, linked incidents
+- ✅ Assign / return (L3+), audit-logged
 
-## Microsoft 365 / Entra ID lab
-- 🟡 Simulated directory seeded (30 users); operations UI (unlock/reset/MFA) pending
+## 8. Microsoft 365 / Entra ID lab
+- ✅ Simulated directory browse/search + user detail
+- ✅ Simulated operations: unlock, password reset, MFA reset/enable,
+  enable/disable — gated to L2+, audit-logged, never touches a real tenant
 
-## Approvals & automation
-- 🟡 `approvals` model + rules present; request/decide UI pending
-- 🟡 Deterministic categorization/routing on create; notification center pending
+## 9. Reporting & analytics
+- ✅ Dashboard metrics from persisted data (SLA compliance, MTTR, first response,
+  time-to-close, reopen rate, overdue, backlog)
+- ✅ Reports page: date-range/department/technician/priority/group filters,
+  priority & category charts, click-to-drill-down, aging, workload
+- ✅ CSV export (tickets + metrics summary)
 
-## Troubleshooting Workbench
-- ⬜ Interactive diagnostic scenarios (planned; integrates with ticket events)
+## 10. Audit, approvals, automation
+- ✅ Append-only audit trail with actor/time/before-after/correlation id
+- ✅ Approvals: request + staff decide (self-approval blocked by rules)
+- ✅ In-app notifications + notification center; automation raises notifications
+  on assignment and resolution; deterministic routing on create
+- 🟡 Optional external email delivery not implemented (in-app notifications are
+  the reliable baseline, per spec); would require a server-side mail integration.
 
-See [README.md](README.md) for the phase plan behind this matrix.
+## Recruiter experience (§19)
+- ✅ "Explore Demo" one-click role sign-in + in-app Guided Demo walkthrough
+- ✅ Demo scenarios A–F function interactively in the Workbench
+
+## Known non-feature items
+- Bundle size ~940 KB (Firebase SDK); route-level code-splitting is a future
+  optimization (non-blocking build warning).
+- Full browser E2E (Playwright) not included; a runnable emulator-backed
+  end-to-end lifecycle test covers the critical journey (see TESTING.md).
