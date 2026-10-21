@@ -17,6 +17,7 @@ import { db } from "../firebase/firebase";
 import { derivePriority, canTransition } from "../domain/itsm";
 import { computeDeadlines, DEFAULT_SLA_POLICY } from "../domain/sla";
 import { logAudit } from "./auditService";
+import { notify } from "./notificationService";
 
 const ticketsCol = collection(db, "tickets");
 
@@ -161,6 +162,13 @@ export async function transitionStatus(ticket, toStatus, actor, extra = {}) {
     newValue: toStatus,
     reason: extra.reason ?? null,
   });
+  if (toStatus === "Resolved") {
+    await notify(ticket.requesterUid, {
+      type: "resolution",
+      message: `${ticket.ticketNumber} was resolved — please confirm or reopen.`,
+      link: `/app/tickets/${ticket.id}`,
+    });
+  }
 }
 
 export async function assignTicket(ticket, tech, actor) {
@@ -179,6 +187,11 @@ export async function assignTicket(ticket, tech, actor) {
     targetType: "ticket",
     targetId: ticket.id,
     newValue: tech.uid,
+  });
+  await notify(tech.uid, {
+    type: "assignment",
+    message: `You were assigned ${ticket.ticketNumber}: ${ticket.shortDescription}`,
+    link: `/app/tickets/${ticket.id}`,
   });
 }
 

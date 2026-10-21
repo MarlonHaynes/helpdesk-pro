@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { PERMISSIONS as P, roleLabel } from "../../auth/roles";
+import NotificationCenter from "./NotificationCenter";
 
 // Sidebar items. Each item declares the permission needed to see it; items a
 // role cannot use are hidden (no dead links). `built` marks modules that are
@@ -14,6 +15,9 @@ const NAV = [
   { to: "/app/submit", label: "Submit Request", icon: "plus", perm: P.TICKET_CREATE },
   { to: "/app/workbench", label: "Workbench", icon: "wrench", perm: P.WORKBENCH_RUN },
   { to: "/app/knowledge", label: "Knowledge Base", icon: "book", perm: P.KB_VIEW_PUBLIC },
+  { to: "/app/assets", label: "Assets", icon: "monitor", perm: P.ASSET_VIEW },
+  { to: "/app/identity", label: "Identity Lab", icon: "users", perm: P.IDENTITY_VIEW },
+  { to: "/app/approvals", label: "Approvals", icon: "check", perm: P.APPROVAL_REQUEST },
   { to: "/app/audit", label: "Audit Log", icon: "shield", perm: P.ADMIN_AUDIT },
 ];
 
@@ -90,6 +94,7 @@ export default function AppShell() {
             ☰
           </button>
           <div className="shell-topbar-spacer" />
+          <NotificationCenter />
           <div className="shell-user">
             <span className="shell-user-name">{name}</span>
             <span className="role-chip">{roleLabel(role)}</span>

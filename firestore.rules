@@ -227,9 +227,11 @@ service cloud.firestore {
       allow read: if isStaff()
         || (isSignedIn() && resource.data.requesterUid == request.auth.uid);
       allow create: if isSignedIn() && incoming().requesterUid == request.auth.uid;
-      // Only an approver (admin, or the designated approver) may decide.
-      allow update: if (isAdmin() || incoming().approverUid == request.auth.uid)
-        && onlyChanged(["status", "decisionNotes", "decidedAt", "approverUid", "updatedAt"]);
+      // Only support staff may decide, and they must stamp themselves as the
+      // approver. This prevents a requester from self-approving.
+      allow update: if isStaff()
+        && incoming().approverUid == request.auth.uid
+        && onlyChanged(["status", "decisionNotes", "decidedAt", "approverUid", "approverName", "updatedAt"]);
       allow delete: if isAdmin();
     }
 

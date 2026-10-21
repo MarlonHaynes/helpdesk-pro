@@ -14,6 +14,10 @@ import AuditPage from "./pages/AuditPage";
 import KnowledgeBasePage from "./pages/KnowledgeBasePage";
 import ArticleDetailPage from "./pages/ArticleDetailPage";
 import WorkbenchPage from "./pages/WorkbenchPage";
+import AssetsPage from "./pages/AssetsPage";
+import AssetDetailPage from "./pages/AssetDetailPage";
+import IdentityLabPage from "./pages/IdentityLabPage";
+import ApprovalsPage from "./pages/ApprovalsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { PERMISSIONS as P } from "./auth/roles";
 
@@ -53,6 +57,38 @@ export default function App() {
           element={
             <ProtectedRoute permission={P.WORKBENCH_RUN}>
               <WorkbenchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="assets"
+          element={
+            <ProtectedRoute permission={P.ASSET_VIEW}>
+              <AssetsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="assets/:id"
+          element={
+            <ProtectedRoute permission={P.ASSET_VIEW}>
+              <AssetDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="identity"
+          element={
+            <ProtectedRoute permission={P.IDENTITY_VIEW}>
+              <IdentityLabPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="approvals"
+          element={
+            <ProtectedRoute permission={P.APPROVAL_REQUEST}>
+              <ApprovalsPage />
             </ProtectedRoute>
           }
         />

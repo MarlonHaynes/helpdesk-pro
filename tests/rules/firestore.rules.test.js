@@ -254,6 +254,74 @@ describe("knowledgeArticles", () => {
   });
 });
 
+describe("approvals", () => {
+  it("lets a user create their own approval request", async () => {
+    await assertSucceeds(
+      setDoc(doc(ctx("emp1", "employee"), "approvals/ap1"), { requesterUid: "emp1", type: "Access request", status: "Pending" })
+    );
+  });
+  it("rejects creating an approval for someone else", async () => {
+    await assertFails(
+      setDoc(doc(ctx("emp1", "employee"), "approvals/ap2"), { requesterUid: "other", type: "x", status: "Pending" })
+    );
+  });
+  it("lets an admin decide (approve) a pending request", async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), "approvals/ap3"), { requesterUid: "emp1", status: "Pending" });
+    });
+    await assertSucceeds(
+      updateDoc(doc(ctx("admin1", "administrator"), "approvals/ap3"), {
+        status: "Approved", approverUid: "admin1", approverName: "A", decidedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      })
+    );
+  });
+  it("blocks an employee from deciding an approval", async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), "approvals/ap4"), { requesterUid: "x", status: "Pending" });
+    });
+    await assertFails(
+      updateDoc(doc(ctx("emp1", "employee"), "approvals/ap4"), { status: "Approved", approverUid: "emp1", updatedAt: serverTimestamp() })
+    );
+  });
+});
+
+describe("simulatedDirectoryUsers (M365/Entra lab)", () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), "simulatedDirectoryUsers/u1"), { displayName: "D", locked: true, accountStatus: "Active" });
+    });
+  });
+  it("lets a technician read the directory", async () => {
+    await assertSucceeds(getDoc(doc(ctx("t", "l1"), "simulatedDirectoryUsers/u1")));
+  });
+  it("blocks L1 from performing operations but allows L2+", async () => {
+    await assertFails(updateDoc(doc(ctx("t", "l1"), "simulatedDirectoryUsers/u1"), { locked: false }));
+    await assertSucceeds(updateDoc(doc(ctx("t", "l2"), "simulatedDirectoryUsers/u1"), { locked: false }));
+  });
+  it("blocks employees entirely", async () => {
+    await assertFails(getDoc(doc(ctx("emp1", "employee"), "simulatedDirectoryUsers/u1")));
+  });
+});
+
+describe("notifications", () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), "notifications/n1"), { recipientUid: "emp1", message: "hi", read: false });
+    });
+  });
+  it("lets the recipient read and mark their notification read", async () => {
+    await assertSucceeds(getDoc(doc(ctx("emp1", "employee"), "notifications/n1")));
+    await assertSucceeds(updateDoc(doc(ctx("emp1", "employee"), "notifications/n1"), { read: true, readAt: serverTimestamp() }));
+  });
+  it("blocks a different user from reading someone else's notification", async () => {
+    await assertFails(getDoc(doc(ctx("emp2", "employee"), "notifications/n1")));
+  });
+  it("lets staff create notifications but not employees", async () => {
+    await assertSucceeds(setDoc(doc(ctx("t", "l1"), "notifications/n2"), { recipientUid: "emp1", message: "x", read: false }));
+    await assertFails(setDoc(doc(ctx("emp1", "employee"), "notifications/n3"), { recipientUid: "emp2", message: "x", read: false }));
+  });
+});
+
 describe("config collections — admin-only writes", () => {
   it("lets signed-in users read SLA policies", async () => {
     await testEnv.withSecurityRulesDisabled(async (c) => {

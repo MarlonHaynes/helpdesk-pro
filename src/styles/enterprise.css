@@ -218,12 +218,34 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .kb-article .pre { font-size: 0.92rem; line-height: 1.7; }
 .kb-feedback { display: flex; align-items: center; gap: 12px; }
 
+/* ---- Identity lab ---- */
+.idlab-grid { display: grid; grid-template-columns: 360px 1fr; gap: var(--space-4); align-items: start; }
+.idlab-list { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow-y: auto; }
+.idlab-user { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-1); cursor: pointer; }
+.idlab-user:hover, .idlab-user.active { border-color: var(--accent); background: var(--accent-light); }
+.idlab-name { font-weight: 600; color: var(--text-strong); }
+.idlab-flags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+
+/* ---- Notification center ---- */
+.notif { position: relative; }
+.notif-btn { position: relative; background: none; border: none; cursor: pointer; color: var(--text-base); padding: 6px; border-radius: var(--radius-sm); display: flex; }
+.notif-btn:hover { background: var(--surface-1); }
+.notif-badge { position: absolute; top: 0; right: 0; background: var(--danger); color: #fff; font-size: 0.64rem; font-weight: 700; min-width: 16px; height: 16px; border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.notif-dropdown { position: absolute; right: 0; top: calc(100% + 8px); width: 320px; max-width: 86vw; background: var(--surface-0); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-md); z-index: 60; overflow: hidden; }
+.notif-head { padding: 12px 14px; font-weight: 700; color: var(--text-strong); border-bottom: 1px solid var(--border); }
+.notif-dropdown ul { list-style: none; max-height: 360px; overflow-y: auto; }
+.notif-item { width: 100%; text-align: left; padding: 11px 14px; background: none; border: none; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 0.86rem; color: var(--text-base); }
+.notif-item:hover { background: var(--surface-1); }
+.notif-item.unread { background: var(--accent-light); font-weight: 600; color: var(--text-strong); }
+.notif-empty { padding: 18px 14px; color: var(--text-muted); font-size: 0.86rem; text-align: center; }
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
   .detail-grid { grid-template-columns: 1fr; }
   .detail-side { position: static; }
   .auth-grid { grid-template-columns: 1fr; }
   .kv.two-col { grid-template-columns: 1fr; }
+  .idlab-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .shell-sidebar { position: fixed; left: -260px; z-index: 50; transition: left var(--ease); }
