@@ -16,6 +16,7 @@ import {
   reopenByRequester,
 } from "../services/ticketService";
 import { getStaffUsers } from "../services/userService";
+import { scenariosForService } from "../workbench/scenarios";
 import { toTicketView } from "../domain/ticketView";
 import { allowedTransitions, IMPACT_LEVELS, URGENCY_LEVELS, SUPPORT_GROUPS, RESOLUTION_CODES } from "../domain/itsm";
 import { formatRemaining } from "../domain/sla";
@@ -134,6 +135,26 @@ export default function TicketDetailPage() {
               <SlaClock title="Resolution" clock={ticket.sla.resolution} due={ticket.slaResolutionDueAt} />
             </div>
           </section>
+
+          {isStaff && (() => {
+            const scns = scenariosForService(ticket.serviceAffected || ticket.category);
+            if (!scns.length) return null;
+            return (
+              <section className="panel">
+                <h2>Troubleshooting Workbench</h2>
+                <p className="muted small">Launch a guided diagnostic for this issue; results can be recorded back to this ticket.</p>
+                <ul className="kb-links">
+                  {scns.map((s) => (
+                    <li key={s.id}>
+                      <Link className="link" to={`/app/workbench?ticket=${ticket.id}&scenario=${s.id}`}>
+                        {s.title} <span className="muted small">({s.difficulty})</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
 
           {(ticket.resolutionSummary || ticket.rootCause) && (
             <section className="panel">

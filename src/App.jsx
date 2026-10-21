@@ -11,6 +11,9 @@ import TicketDetailPage from "./pages/TicketDetailPage";
 import MyTicketsPage from "./pages/MyTicketsPage";
 import SubmitTicketPage from "./pages/SubmitTicketPage";
 import AuditPage from "./pages/AuditPage";
+import KnowledgeBasePage from "./pages/KnowledgeBasePage";
+import ArticleDetailPage from "./pages/ArticleDetailPage";
+import WorkbenchPage from "./pages/WorkbenchPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { PERMISSIONS as P } from "./auth/roles";
 
@@ -43,6 +46,16 @@ export default function App() {
         />
         <Route path="tickets/:id" element={<TicketDetailPage />} />
         <Route path="my-tickets" element={<MyTicketsPage />} />
+        <Route path="knowledge" element={<KnowledgeBasePage />} />
+        <Route path="knowledge/:id" element={<ArticleDetailPage />} />
+        <Route
+          path="workbench"
+          element={
+            <ProtectedRoute permission={P.WORKBENCH_RUN}>
+              <WorkbenchPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="submit"
           element={

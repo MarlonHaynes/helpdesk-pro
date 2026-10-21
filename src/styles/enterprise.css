@@ -177,6 +177,47 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .demo-note { font-size: 0.82rem; color: var(--text-muted); margin-top: var(--space-3); }
 .demo-note code, .form-error code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
 
+/* ---- Workbench ---- */
+.wb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); }
+.wb-card { text-align: left; position: relative; display: flex; flex-direction: column; gap: 6px; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-0); box-shadow: var(--shadow-xs); cursor: pointer; transition: border-color var(--ease), transform var(--ease); }
+.wb-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.wb-card h3 { color: var(--text-strong); font-size: 1rem; }
+.wb-demo-tag { position: absolute; top: 12px; right: 12px; background: var(--teal-light); color: var(--teal); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.wb-diff { align-self: flex-start; margin-top: 4px; font-size: 0.72rem; font-weight: 700; color: var(--accent-hover); background: var(--accent-light); padding: 2px 8px; border-radius: 999px; }
+.wb-progress { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-bottom: var(--space-4); }
+.wb-progress span { display: block; height: 100%; background: var(--accent); transition: width var(--ease); }
+.wb-stage h3 { color: var(--text-strong); margin-bottom: var(--space-2); }
+.wb-actions { margin-top: var(--space-4); }
+.wb-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: var(--space-3) 0; }
+.wb-output { background: #11202e; color: #d7e6f2; padding: var(--space-3); border-radius: var(--radius-sm); overflow-x: auto; font-size: 0.82rem; margin-bottom: var(--space-2); }
+.wb-options { display: flex; flex-direction: column; gap: 10px; }
+.wb-opt { text-align: left; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface-1); cursor: pointer; color: var(--text-base); transition: border-color var(--ease); }
+.wb-opt:hover:not(:disabled) { border-color: var(--accent); }
+.wb-correct { border-color: var(--success); background: var(--success-light); }
+.wb-wrong { border-color: var(--danger); background: var(--danger-light); }
+.wb-dim { opacity: 0.55; }
+.wb-feedback { font-size: 0.84rem; color: var(--text-base); }
+.wb-resolution { display: grid; grid-template-columns: 180px 1fr; gap: 10px 16px; }
+.wb-resolution dt { font-weight: 700; color: var(--text-muted); }
+.wb-resolution dd { color: var(--text-strong); }
+.wb-summary h3 { color: var(--text-strong); }
+.banner-ok { background: var(--success-light); color: #2c7d58; padding: 10px 14px; border-radius: var(--radius-sm); font-weight: 600; }
+.linkbtn { background: none; border: none; cursor: pointer; padding: 0; font: inherit; }
+
+/* ---- Knowledge base ---- */
+.kb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); }
+.kb-card { display: flex; flex-direction: column; gap: 8px; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-0); box-shadow: var(--shadow-xs); transition: border-color var(--ease), transform var(--ease); }
+.kb-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.kb-card h3 { color: var(--text-strong); font-size: 1rem; }
+.kb-card-top { display: flex; justify-content: space-between; align-items: center; }
+.kb-cat { font-size: 0.74rem; font-weight: 700; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.3px; }
+.kb-internal { font-size: 0.7rem; font-weight: 700; color: #8a6418; background: #f3e2c0; padding: 2px 7px; border-radius: 999px; }
+.kb-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.kb-tag { font-size: 0.72rem; color: var(--text-muted); background: var(--surface-2); padding: 2px 7px; border-radius: 999px; }
+.kb-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.kb-article .pre { font-size: 0.92rem; line-height: 1.7; }
+.kb-feedback { display: flex; align-items: center; gap: 12px; }
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
   .detail-grid { grid-template-columns: 1fr; }

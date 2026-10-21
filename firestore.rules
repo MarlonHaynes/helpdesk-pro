@@ -202,6 +202,14 @@ service cloud.firestore {
         || (isSignedIn() && resource.data.visibility == "public" && resource.data.status == "published");
       allow create, update: if isL2Plus();   // authors
       allow delete: if isAdmin();
+
+      // Helpful / not-helpful feedback: any signed-in reader may submit, keyed
+      // by their uid; append-only.
+      match /feedback/{fbId} {
+        allow read: if isStaff();
+        allow create: if isSignedIn() && incoming().uid == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
 
     // ---------------------------------------------------------------------

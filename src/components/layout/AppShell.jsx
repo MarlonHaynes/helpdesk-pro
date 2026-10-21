@@ -12,6 +12,8 @@ const NAV = [
   { to: "/app/tickets", label: "Ticket Queue", icon: "inbox", perm: P.TICKET_VIEW_ALL },
   { to: "/app/my-tickets", label: "My Tickets", icon: "ticket", perm: P.TICKET_VIEW_OWN },
   { to: "/app/submit", label: "Submit Request", icon: "plus", perm: P.TICKET_CREATE },
+  { to: "/app/workbench", label: "Workbench", icon: "wrench", perm: P.WORKBENCH_RUN },
+  { to: "/app/knowledge", label: "Knowledge Base", icon: "book", perm: P.KB_VIEW_PUBLIC },
   { to: "/app/audit", label: "Audit Log", icon: "shield", perm: P.ADMIN_AUDIT },
 ];
 
@@ -23,6 +25,13 @@ function Icon({ name }) {
     ticket: "M4 7h16v4a2 2 0 0 0 0 4v2H4v-2a2 2 0 0 0 0-4z",
     plus: "M12 5v14M5 12h14",
     shield: "M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z",
+    wrench: "M14 7a4 4 0 0 1-5 5l-6 6 2 2 6-6a4 4 0 0 0 5-5z",
+    book: "M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM8 7h8M8 11h8",
+    monitor: "M3 4h18v12H3zM8 20h8M12 16v4",
+    users: "M16 18v-2a4 4 0 0 0-8 0v2M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
+    check: "M4 12l5 5L20 6",
+    bell: "M6 8a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7M10 21h4",
+    chart: "M4 20V10M10 20V4M16 20v-7M22 20H2",
   };
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

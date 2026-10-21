@@ -222,6 +222,38 @@ describe("assets — role gating", () => {
   });
 });
 
+describe("knowledgeArticles", () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (c) => {
+      await setDoc(doc(c.firestore(), "knowledgeArticles/kb-pub"), { title: "P", visibility: "public", status: "published" });
+      await setDoc(doc(c.firestore(), "knowledgeArticles/kb-int"), { title: "I", visibility: "internal", status: "published" });
+    });
+  });
+
+  it("lets an employee read a published public article but not an internal one", async () => {
+    await assertSucceeds(getDoc(doc(ctx("emp1", "employee"), "knowledgeArticles/kb-pub")));
+    await assertFails(getDoc(doc(ctx("emp1", "employee"), "knowledgeArticles/kb-int")));
+  });
+
+  it("lets a technician read internal articles", async () => {
+    await assertSucceeds(getDoc(doc(ctx("tech1", "l1"), "knowledgeArticles/kb-int")));
+  });
+
+  it("blocks L1 from authoring but allows L2+", async () => {
+    await assertFails(setDoc(doc(ctx("t", "l1"), "knowledgeArticles/kb-new"), { title: "x", visibility: "public", status: "draft" }));
+    await assertSucceeds(setDoc(doc(ctx("t", "l2"), "knowledgeArticles/kb-new"), { title: "x", visibility: "public", status: "draft" }));
+  });
+
+  it("lets any signed-in reader submit feedback keyed by their uid, append-only", async () => {
+    await assertSucceeds(
+      setDoc(doc(ctx("emp1", "employee"), "knowledgeArticles/kb-pub/feedback/f1"), { uid: "emp1", helpful: true })
+    );
+    await assertFails(
+      setDoc(doc(ctx("emp1", "employee"), "knowledgeArticles/kb-pub/feedback/f2"), { uid: "someoneElse", helpful: true })
+    );
+  });
+});
+
 describe("config collections — admin-only writes", () => {
   it("lets signed-in users read SLA policies", async () => {
     await testEnv.withSecurityRulesDisabled(async (c) => {
