@@ -1,0 +1,277 @@
+rules_version = '2';
+
+// =============================================================================
+// HelpDesk Pro — Cloud Firestore security rules
+// =============================================================================
+// Authorization model:
+//   * Every user's role lives in a custom auth claim `request.auth.token.role`
+//     (set by scripts/setClaims via the Firebase Admin SDK — never by the
+//     client). Roles: administrator | l1 | l2 | l3 | employee.
+//   * These rules are the real enforcement layer. The React client mirrors the
+//     same logic for UX only (see src/auth/roles.js).
+//   * Privileged fields (status transitions, priority, assignment, audit
+//     events) are validated here so a malicious client cannot forge them.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return isSignedIn() ? request.auth.token.role : "";
+    }
+
+    function hasRole(r) {
+      return role() == r;
+    }
+
+    function isAdmin() {
+      return hasRole("administrator");
+    }
+
+    // Any technician/specialist tier.
+    function isTech() {
+      return role() in ["l1", "l2", "l3", "administrator"];
+    }
+
+    // L2 and above.
+    function isL2Plus() {
+      return role() in ["l2", "l3", "administrator"];
+    }
+
+    // L3 and above.
+    function isL3Plus() {
+      return role() in ["l3", "administrator"];
+    }
+
+    function isStaff() {
+      return isTech();
+    }
+
+    function existingData() {
+      return resource.data;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Only the listed fields changed between existing and incoming.
+    function onlyChanged(allowedFields) {
+      return incoming().diff(existingData()).affectedKeys().hasOnly(allowedFields);
+    }
+
+    // ITIL impact/urgency -> priority matrix. This is enforced server-side so a
+    // requester cannot self-assign P1.
+    function derivedPriority(impact, urgency) {
+      return (impact == "High" && urgency == "High") ? "P1"
+        : ((impact == "High" && urgency == "Medium") ||
+           (impact == "Medium" && urgency == "High")) ? "P2"
+        : ((impact == "High" && urgency == "Low") ||
+           (impact == "Medium" && urgency == "Medium") ||
+           (impact == "Low" && urgency == "High")) ? "P3"
+        : "P4";
+    }
+
+    function validPriorityForTicket(data) {
+      return data.priority == derivedPriority(data.impact, data.urgency);
+    }
+
+    // Allowed status transition graph for incidents/requests.
+    function validTransition(from, to) {
+      return from == to
+        || (from == "New" && to in ["Assigned", "In Progress", "Escalated"])
+        || (from == "Assigned" && to in ["In Progress", "Escalated", "Pending User", "Pending Vendor"])
+        || (from == "In Progress" && to in ["Pending User", "Pending Vendor", "Escalated", "Resolved"])
+        || (from == "Pending User" && to in ["In Progress", "Resolved"])
+        || (from == "Pending Vendor" && to in ["In Progress", "Resolved"])
+        || (from == "Escalated" && to in ["In Progress", "Assigned", "Resolved"])
+        || (from == "Resolved" && to in ["Closed", "Reopened"])
+        || (from == "Reopened" && to in ["In Progress", "Assigned", "Escalated", "Resolved"]);
+    }
+
+    // ---------------------------------------------------------------------
+    // users — profiles. Role lives in the auth claim; the `role` field here is
+    // a mirror for display and is only writable by admins.
+    // ---------------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isStaff());
+      // Profiles are provisioned by the Admin SDK seed/claims script. Admins may
+      // edit non-identity profile fields from the app; a user may update only
+      // their own display name.
+      allow update: if isAdmin()
+        || (request.auth.uid == uid && onlyChanged(["displayName", "updatedAt"]));
+      allow create, delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // tickets — incidents, service requests, problems, change requests.
+    // ---------------------------------------------------------------------
+    match /tickets/{ticketId} {
+
+      function ownsTicket() {
+        return isSignedIn() && existingData().requesterUid == request.auth.uid;
+      }
+
+      allow read: if isStaff() || ownsTicket();
+
+      // Create: requester opens their own ticket. Server-forced initial state.
+      allow create: if isSignedIn()
+        && incoming().requesterUid == request.auth.uid
+        && incoming().status == "New"
+        && incoming().escalationLevel == 0
+        && incoming().recordType in ["Incident", "Service Request", "Problem", "Change Request"]
+        && incoming().impact in ["High", "Medium", "Low"]
+        && incoming().urgency in ["High", "Medium", "Low"]
+        && validPriorityForTicket(incoming())
+        && incoming().createdAt == request.time
+        // Requester may not set resolution/assignment fields on create.
+        && !incoming().keys().hasAny(["resolvedAt", "closedAt", "resolutionSummary", "rootCause", "assignedTechUid"]);
+
+      // Staff updates: full workflow control, but transitions must be valid and
+      // priority must stay consistent with impact/urgency.
+      allow update: if isStaff()
+        && validTransition(existingData().status, incoming().status)
+        && validPriorityForTicket(incoming())
+        && incoming().requesterUid == existingData().requesterUid
+        && incoming().createdAt == existingData().createdAt;
+
+      // Requester-limited updates: confirm resolution (-> Closed), reopen a
+      // resolved ticket, or append a requester-facing comment. They may never
+      // touch priority, assignment, or internal fields.
+      allow update: if ownsTicket()
+        && onlyChanged(["status", "requesterConfirmed", "updatedAt", "lastRequesterUpdateAt"])
+        && (
+          (existingData().status == "Resolved" && incoming().status in ["Closed", "Reopened"])
+          || incoming().status == existingData().status
+        );
+
+      allow delete: if isAdmin();
+
+      // ---- events: immutable audit timeline for this ticket ----
+      match /events/{eventId} {
+        allow read: if isStaff() ||
+          get(/databases/$(database)/documents/tickets/$(ticketId)).data.requesterUid == request.auth.uid;
+        // Append-only: anyone who can act on the ticket can write an event, but
+        // only recording their own uid, and events can never be edited/removed.
+        allow create: if isSignedIn()
+          && incoming().actorUid == request.auth.uid
+          && incoming().at == request.time;
+        allow update, delete: if false;
+      }
+
+      // ---- notes: internal vs requester-facing ----
+      match /notes/{noteId} {
+        function ticketOwnerUid() {
+          return get(/databases/$(database)/documents/tickets/$(ticketId)).data.requesterUid;
+        }
+        // Internal notes are staff-only; requester-facing notes also visible to
+        // the ticket owner.
+        allow read: if isStaff()
+          || (resource.data.visibility == "requester" && ticketOwnerUid() == request.auth.uid);
+        allow create: if (isStaff() && incoming().authorUid == request.auth.uid)
+          || (ticketOwnerUid() == request.auth.uid
+              && incoming().visibility == "requester"
+              && incoming().authorUid == request.auth.uid);
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // auditLogs — global, append-only privileged-action trail.
+    // ---------------------------------------------------------------------
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isStaff()
+        && incoming().actorUid == request.auth.uid
+        && incoming().at == request.time;
+      allow update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // knowledgeArticles — public vs internal visibility, author/approve gates.
+    // ---------------------------------------------------------------------
+    match /knowledgeArticles/{articleId} {
+      allow read: if isStaff()
+        || (isSignedIn() && resource.data.visibility == "public" && resource.data.status == "published");
+      allow create, update: if isL2Plus();   // authors
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // assets — IT asset inventory.
+    // ---------------------------------------------------------------------
+    match /assets/{assetId} {
+      allow read: if isStaff();
+      allow create, update, delete: if isL3Plus();
+    }
+
+    // ---------------------------------------------------------------------
+    // approvals — simulated approval workflows.
+    // ---------------------------------------------------------------------
+    match /approvals/{approvalId} {
+      allow read: if isStaff()
+        || (isSignedIn() && resource.data.requesterUid == request.auth.uid);
+      allow create: if isSignedIn() && incoming().requesterUid == request.auth.uid;
+      // Only an approver (admin, or the designated approver) may decide.
+      allow update: if (isAdmin() || incoming().approverUid == request.auth.uid)
+        && onlyChanged(["status", "decisionNotes", "decidedAt", "approverUid", "updatedAt"]);
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // notifications — per-user in-app notifications.
+    // ---------------------------------------------------------------------
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isStaff();      // staff/system raise notifications
+      // Recipient may only mark their own notification read.
+      allow update: if isSignedIn()
+        && resource.data.recipientUid == request.auth.uid
+        && onlyChanged(["read", "readAt"]);
+      allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+    }
+
+    // ---------------------------------------------------------------------
+    // simulatedDirectoryUsers — Microsoft 365 / Entra ID lab directory.
+    // Lookups allowed for techs; simulated operations (unlock, reset, etc.)
+    // require L2+ and are recorded in auditLogs by the client.
+    // ---------------------------------------------------------------------
+    match /simulatedDirectoryUsers/{dirId} {
+      allow read: if isStaff();
+      allow update: if isL2Plus();
+      allow create, delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------
+    // Configuration collections — readable by signed-in staff, admin-managed.
+    // ---------------------------------------------------------------------
+    match /slaPolicies/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /departments/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /supportTeams/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /applicationSettings/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Default deny for anything not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

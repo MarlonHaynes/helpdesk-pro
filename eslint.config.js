@@ -26,4 +26,11 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Node-based tooling: tests (rules + unit) and scripts.
+    files: ['tests/**/*.{js,jsx}', 'scripts/**/*.{js,mjs,cjs}', '*.config.js'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 ])

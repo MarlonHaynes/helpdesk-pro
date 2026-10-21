@@ -1,0 +1,16 @@
+# Render static-site deployment for the HelpDesk Pro SPA.
+# Set the VITE_FIREBASE_* environment variables in the Render dashboard
+# (Environment) — see .env.example. Do not put secrets in VITE_ vars.
+services:
+  - type: web
+    name: helpdesk-pro
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_USE_EMULATORS
+        value: "false"

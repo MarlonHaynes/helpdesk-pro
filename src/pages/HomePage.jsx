@@ -12,11 +12,11 @@ export default function HomePage() {
 						informed at every step. Friendly support, made simple.
 					</p>
 					<div className="hero-actions">
-						<Link to="/submit-ticket" className="primary-btn">
-							Submit a Request
+						<Link to="/login" className="primary-btn">
+							Explore the Demo
 						</Link>
-						<Link to="/my-tickets" className="secondary-btn">
-							Find My Tickets
+						<Link to="/login" className="secondary-btn">
+							Sign In
 						</Link>
 					</div>
 				</div>

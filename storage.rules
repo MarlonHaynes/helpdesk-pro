@@ -1,0 +1,52 @@
+rules_version = '2';
+
+// =============================================================================
+// HelpDesk Pro — Firebase Storage security rules
+// =============================================================================
+// Ticket attachments live under tickets/{ticketId}/... . Role comes from the
+// custom auth claim `request.auth.token.role`.
+// =============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff() {
+      return isSignedIn() &&
+        request.auth.token.role in ["l1", "l2", "l3", "administrator"];
+    }
+
+    // Validate uploaded attachments: images/pdf only, max 10 MB.
+    function validAttachment() {
+      return request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType.matches("image/.*")
+            || request.resource.contentType == "application/pdf");
+    }
+
+    // Ticket attachments. Any signed-in user may upload (requesters attaching
+    // evidence to their own ticket, staff attaching working files). Reads are
+    // limited to signed-in users; staff can read everything, and the client is
+    // responsible for only surfacing a requester's own ticket media. Writes are
+    // validated for type/size here.
+    match /tickets/{ticketId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && validAttachment();
+      allow delete: if isStaff();
+    }
+
+    // Legacy path from the original app (pre-upgrade screenshots).
+    match /ticket-screenshots/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && validAttachment();
+      allow delete: if isStaff();
+    }
+
+    // Default deny.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

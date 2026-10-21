@@ -1,128 +1,130 @@
-# HelpDesk Pro
+# HelpDesk Pro — Enterprise IT Service Desk (Demo)
 
-A modern IT support ticketing system built with React, Vite, and Firebase. Public users can submit and track support tickets, while administrators sign in to a protected dashboard to manage, triage, and resolve them.
+A portfolio demonstration of an enterprise-style IT Service Management (ITSM)
+platform: role-based service desk operations (L1/L2/L3 + employee + admin),
+ITIL-aligned incident management, SLA tracking, an immutable audit trail, and
+analytics — built on React 19, Vite, and Firebase, with security enforced by
+Cloud Firestore rules and custom-claim roles.
 
----
-
-## Demo Admin Login
-
-The admin login form is **pre-filled** with the demo credentials below, so you can simply open the app, go to the admin login page, and click **Sign In** — no typing required.
-
-| Field    | Value                   |
-| -------- | ----------------------- |
-| Email    | `AdminMarlon@gmail.com` |
-| Password | `Admin123`              |
-
-> These credentials are provided for demonstration and review purposes only.
+> **Demo / Simulated Environment.** All employees, tickets, devices, directory
+> accounts, and "Microsoft 365 / Entra ID" operations are **fictional and
+> simulated** (`company.example`). The application's own ticketing, auth,
+> authorization, persistence, SLA math, and audit records are **real and
+> working**. This project does not connect to any real corporate system.
 
 ---
 
-## Features
+## Status (honest)
 
-- **Submit a ticket** — any user can open a support request with a category, priority, and description.
-- **Track my tickets** — users look up the tickets tied to their email address and follow their status.
-- **Ticket details & notes** — view a ticket's full history and add notes to the conversation.
-- **Admin dashboard** — a protected area for staff to view, filter, and update every ticket.
-- **Status workflow** — tickets move through **Open → In Progress → Resolved**.
-- **Secure admin auth** — admin routes are guarded by Firebase Authentication.
+This is an in-progress enterprise upgrade delivered in phases. What is
+**implemented, working, and tested** today:
 
-## Tech Stack
+- ✅ **Security foundation** — Firestore + Storage security rules, custom-claim
+  RBAC (5 roles), server-validated priority & status transitions, append-only
+  audit log. Proven by an emulator-backed rules test suite.
+- ✅ **ITIL ticketing** — Incident / Service Request / Problem / Change record
+  types, 9-state lifecycle with enforced transitions, impact×urgency→priority
+  matrix, assignment, escalation with support-group routing, resolution, requester
+  confirm/reopen, per-ticket immutable event timeline, internal vs requester-facing
+  notes.
+- ✅ **SLA engine** — configurable policies, business-hours + holiday math,
+  response/resolution deadlines, breach & near-breach, recomputed on read (no
+  dependency on a browser staying open).
+- ✅ **Dashboard & analytics** — totals, open/escalated/overdue, SLA compliance,
+  MTTR, first-response, time-to-close, reopen rate, by-priority/category/group,
+  aging buckets — all computed from persisted data.
+- ✅ **Audit log viewer** (admin).
+- ✅ **Demo access** — 5 seeded role accounts with one-click sign-in; idempotent
+  seeding of ~30 employees, 32 assets, 15 KB articles, 30 directory users, and
+  70 tickets with full event trails.
 
-- **React 19** — UI library
-- **Vite** — build tool and dev server with hot module replacement
-- **React Router** — client-side routing
-- **Firebase Authentication** — admin sign-in
-- **Cloud Firestore** — ticket and notes storage
-- **ESLint** — linting
+Planned in later phases (scaffolding/data model already present; dedicated UIs
+not yet built — **not** claimed as finished): Troubleshooting Workbench,
+Knowledge Base browsing UI, Asset Management UI, Microsoft 365 / Entra ID
+Administration Lab UI, approval-workflow UI, and the extended reporting/CSV
+export screens. See [FEATURES.md](FEATURES.md) for the full matrix.
 
-## Getting Started
+---
 
-### Prerequisites
+## Tech stack
 
-- [Node.js](https://nodejs.org/) (v18 or newer recommended)
-- A Firebase project with **Authentication** (Email/Password) and **Cloud Firestore** enabled
+React 19 · Vite · React Router 7 · Firebase Auth · Cloud Firestore · Firebase
+Storage · Vitest · `@firebase/rules-unit-testing` · Firebase Emulator Suite.
 
-### Installation
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the data model and
+[SECURITY.md](SECURITY.md) for the authorization model.
+
+---
+
+## Quick start (local, $0, emulator-first)
+
+Requires Node 18+ and a JDK (for the Firestore emulator).
 
 ```bash
-# Clone the repository
-git clone https://github.com/MarlonHaynes/helpdesk-pro.git
-cd helpdesk-pro
-
-# Install dependencies
 npm install
+
+# Terminal 1 — start the Firebase Emulator Suite (auth, firestore, storage)
+npm run emulators
+
+# Terminal 2 — seed fictional demo data + create demo role accounts
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 \
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+  npm run seed
+
+# Terminal 3 — run the app against the emulators
+npm run dev           # uses .env.local (VITE_USE_EMULATORS=true)
 ```
 
-### Environment Variables
+Then open the app, go to **Sign In**, and click any role button.
 
-Create a `.env` file in the project root with your Firebase project settings:
+> Windows PowerShell: set the two env vars with `$env:FIRESTORE_EMULATOR_HOST=...`
+> before `npm run seed`, or run `firebase emulators:exec --only auth,firestore "npm run seed"`.
 
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
+### Demo accounts
 
-> `.env` is git-ignored and should never be committed.
+Seeded fictional accounts (shared demo password `Demo123!`). Each is limited to
+its role by security rules — no account grants real admin access to anything
+beyond demo data.
 
-### Create the Admin User
+| Role | Email |
+|---|---|
+| Administrator | `admin@helpdesk.demo` |
+| L1 Technician | `l1@helpdesk.demo` |
+| L2 Technician | `l2@helpdesk.demo` |
+| L3 Specialist | `l3@helpdesk.demo` |
+| Employee | `employee@helpdesk.demo` |
 
-In the **Firebase Console → Authentication → Users → Add user**, add an Email/Password user:
+There is **no hardcoded admin password** in the app or this README. Roles come
+from Firebase custom claims set by the server-side seed script.
 
-- **Email:** `AdminMarlon@gmail.com`
-- **Password:** `Admin123`
+---
 
-This is the account the pre-filled login form signs in with.
+## Scripts
 
-### Running the App
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm test` | Unit tests (domain logic, RBAC, SLA, metrics) |
+| `npm run test:rules` | Firestore security-rules tests (emulator) |
+| `npm run emulators` | Start the Firebase Emulator Suite |
+| `npm run seed` | Seed demo data + set custom claims (emulator by default) |
 
-```bash
-# Start the development server
-npm run dev
+---
 
-# Build for production
-npm run build
+## Deployment
 
-# Preview the production build
-npm run preview
+Frontend deploys to **Vercel** or **Render** as a static Vite SPA; Firebase
+rules/indexes deploy separately with the Firebase CLI. Full instructions,
+including the Blaze-plan trade-off for scheduled SLA jobs, are in
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
-# Lint the codebase
-npm run lint
-```
+## Documentation
 
-The dev server runs at `http://localhost:5173` by default.
-
-## Usage
-
-1. Open the app and submit a ticket from the home page, or track existing tickets by email.
-2. Go to the **Admin Login** page — the demo credentials are already filled in.
-3. Click **Sign In** to reach the dashboard and manage tickets.
-
-## Project Structure
-
-```
-helpdesk-pro/
-├── public/                 # Static assets
-├── src/
-│   ├── components/         # Reusable UI (layout, tickets)
-│   ├── firebase/          # Firebase initialization
-│   ├── pages/             # Route pages (Home, Submit, Admin, etc.)
-│   ├── routes/            # Protected route wrapper
-│   ├── services/          # Auth, ticket, and storage logic
-│   ├── styles/            # Global and app styles
-│   ├── utils/             # Constants and helpers
-│   ├── App.jsx            # Route definitions
-│   └── main.jsx           # App entry point
-├── .env                    # Firebase config (not committed)
-├── index.html
-├── package.json
-└── vite.config.js
-```
-
-## Author
-
-**Marlon Haynes** — [Web Alchemist Labs](https://github.com/MarlonHaynes)
-GitHub: [@MarlonHaynes](https://github.com/MarlonHaynes)
+- [ARCHITECTURE.md](ARCHITECTURE.md) — data model, modules, SLA/priority logic
+- [SECURITY.md](SECURITY.md) — RBAC, rules, custom claims, threat model
+- [FEATURES.md](FEATURES.md) — feature matrix (done vs. planned)
+- [DEPLOYMENT.md](DEPLOYMENT.md) — Vercel + Render + Firebase setup
+- [TESTING.md](TESTING.md) — how to run and extend the tests
+- [DEMO_GUIDE.md](DEMO_GUIDE.md) — guided recruiter walkthrough

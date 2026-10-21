@@ -28,3 +28,11 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Firebase emulator + admin artifacts
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+service-account*.json
+*-service-account*.json

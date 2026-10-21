@@ -1,187 +1,318 @@
 import {
   collection,
+  collectionGroup,
   addDoc,
+  setDoc,
   getDocs,
   getDoc,
   doc,
   query,
   where,
   orderBy,
+  limit as qlimit,
   updateDoc,
   serverTimestamp,
-  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
+import { derivePriority, canTransition } from "../domain/itsm";
+import { computeDeadlines, DEFAULT_SLA_POLICY } from "../domain/sla";
+import { logAudit } from "./auditService";
 
-const ticketsCollection = collection(db, "tickets");
+const ticketsCol = collection(db, "tickets");
 
-function normalizeEmail(value) {
-  return String(value ?? "").trim().toLowerCase();
+function mapDocs(snapshot) {
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-function mapTicketSnapshot(snapshot) {
-  return snapshot.docs.map((docItem) => ({
-    id: docItem.id,
-    ...docItem.data(),
-  }));
+function nextTicketNumber() {
+  // Human-friendly incident number. Uniqueness for the demo is provided by the
+  // time component + random suffix; the Firestore doc id is the true key.
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `INC${stamp}-${rand}`;
 }
 
-function getCreatedAtMillis(ticket) {
-  const createdAt = ticket?.createdAt;
+/**
+ * Create a ticket. Priority is DERIVED from impact/urgency (never taken from
+ * the requester directly) and must match what firestore.rules recomputes. SLA
+ * deadlines are stamped for indexing but are always re-derived on read from the
+ * rule-validated priority + server createdAt, so a tampered deadline cannot
+ * change the displayed SLA.
+ */
+export async function createTicket(input, actor) {
+  const impact = input.impact ?? "Low";
+  const urgency = input.urgency ?? "Low";
+  const priority = derivePriority(impact, urgency);
 
-  if (!createdAt) {
-    return 0;
-  }
+  // Client estimate of deadlines; createdAt here is a placeholder replaced by
+  // the server timestamp. Re-derivation on read is the source of truth.
+  const estDeadlines = computeDeadlines(new Date(), priority, DEFAULT_SLA_POLICY);
 
-  if (typeof createdAt.toMillis === "function") {
-    return createdAt.toMillis();
-  }
-
-  const asDate = new Date(createdAt);
-  const time = asDate.getTime();
-  return Number.isNaN(time) ? 0 : time;
-}
-
-function sortByCreatedAtDesc(tickets) {
-  return [...tickets].sort((a, b) => getCreatedAtMillis(b) - getCreatedAtMillis(a));
-}
-
-async function queryTicketsByField(fieldName, value) {
-  const q = query(ticketsCollection, where(fieldName, "==", value));
-  const snapshot = await getDocs(q);
-  return mapTicketSnapshot(snapshot);
-}
-
-export async function createTicket(ticketData) {
-  const requesterEmail = String(
-    ticketData.requesterEmail ?? ticketData.email ?? ""
-  ).trim();
-
-  const requesterEmailNormalized = normalizeEmail(requesterEmail);
-
-  const docRef = await addDoc(ticketsCollection, {
-    ...ticketData,
-    requesterEmail,
-    requesterEmailNormalized,
-    email: requesterEmail,
+  const payload = {
+    ticketNumber: nextTicketNumber(),
+    recordType: input.recordType ?? "Incident",
+    shortDescription: input.shortDescription ?? "",
+    description: input.description ?? "",
+    requesterUid: actor.uid,
+    requesterName: input.requesterName ?? actor.displayName ?? "",
+    requesterEmail: actor.email ?? "",
+    department: input.department ?? "",
+    contact: input.contact ?? "",
+    serviceAffected: input.serviceAffected ?? "",
+    category: input.category ?? "Other",
+    subcategory: input.subcategory ?? "",
+    impact,
+    urgency,
+    priority,
+    supportGroup: input.supportGroup ?? "Service Desk L1",
+    assignedTechUid: null,
+    assignedTechName: null,
+    status: "New",
+    escalationLevel: 0,
+    firstResponseAt: null,
+    resolvedAt: null,
+    closedAt: null,
+    resolutionSummary: null,
+    resolutionCode: null,
+    rootCause: null,
+    relatedAssetId: input.relatedAssetId ?? null,
+    linkedArticleIds: [],
+    requesterConfirmed: false,
+    slaResponseDueAt: estDeadlines.responseDueAt,
+    slaResolutionDueAt: estDeadlines.resolutionDueAt,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
-
-  return {
-    id: docRef.id,
   };
+
+  const ref = await addDoc(ticketsCol, payload);
+  await addEvent(ref.id, actor, {
+    eventType: "ticket.created",
+    summary: `Ticket ${payload.ticketNumber} created (${priority})`,
+  });
+  return { id: ref.id, ticketNumber: payload.ticketNumber };
+}
+
+export async function getTicketById(id) {
+  const snap = await getDoc(doc(db, "tickets", id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
 export async function getAllTickets() {
-  const q = query(ticketsCollection, orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-
-  return mapTicketSnapshot(snapshot);
+  const snap = await getDocs(query(ticketsCol, orderBy("createdAt", "desc")));
+  return mapDocs(snap);
 }
 
-export async function getTicketById(ticketId) {
-  const docRef = doc(db, "tickets", ticketId);
-  const snapshot = await getDoc(docRef);
-
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return {
-    id: snapshot.id,
-    ...snapshot.data(),
-  };
+export async function getTicketsForRequester(uid) {
+  const snap = await getDocs(
+    query(ticketsCol, where("requesterUid", "==", uid), orderBy("createdAt", "desc"))
+  );
+  return mapDocs(snap);
 }
 
-export async function getTicketsByEmail(email) {
-  const rawTrimmedEmail = String(email ?? "").trim();
-  const normalizedEmail = normalizeEmail(rawTrimmedEmail);
-
-  if (!rawTrimmedEmail) {
-    return [];
-  }
-
-  const dedupedTickets = new Map();
-
-  const mergeTickets = (tickets) => {
-    tickets.forEach((ticket) => {
-      dedupedTickets.set(ticket.id, ticket);
-    });
-  };
-
-  try {
-    const normalizedMatches = await queryTicketsByField(
-      "requesterEmailNormalized",
-      normalizedEmail
-    );
-    mergeTickets(normalizedMatches);
-
-    // Backward compatibility for older ticket records without requesterEmailNormalized.
-    if (!dedupedTickets.size) {
-      const fallbackQueries = [
-        ["requesterEmail", rawTrimmedEmail],
-        ["requesterEmail", normalizedEmail],
-        ["email", rawTrimmedEmail],
-        ["email", normalizedEmail],
-        ["createdBy.email", rawTrimmedEmail],
-        ["createdBy.email", normalizedEmail],
-      ];
-
-      const seenFallbackKeys = new Set();
-
-      for (const [fieldName, fieldValue] of fallbackQueries) {
-        const dedupeKey = `${fieldName}:${fieldValue}`;
-
-        if (seenFallbackKeys.has(dedupeKey) || !fieldValue) {
-          continue;
-        }
-
-        seenFallbackKeys.add(dedupeKey);
-        const fallbackMatches = await queryTicketsByField(fieldName, fieldValue);
-        mergeTickets(fallbackMatches);
-      }
-    }
-
-    return sortByCreatedAtDesc(Array.from(dedupedTickets.values()));
-  } catch (error) {
-    console.error("Firestore getTicketsByEmail failed", {
-      rawTrimmedEmail,
-      normalizedEmail,
-      errorCode: error?.code,
-      errorMessage: error?.message,
-      error,
-    });
-    throw error;
-  }
+export async function getTicketsAssignedTo(uid) {
+  const snap = await getDocs(
+    query(ticketsCol, where("assignedTechUid", "==", uid), orderBy("createdAt", "desc"))
+  );
+  return mapDocs(snap);
 }
 
-export async function updateTicket(ticketId, updates) {
-  const docRef = doc(db, "tickets", ticketId);
+export async function getTicketsByGroup(group) {
+  const snap = await getDocs(
+    query(ticketsCol, where("supportGroup", "==", group), orderBy("createdAt", "desc"))
+  );
+  return mapDocs(snap);
+}
 
-  await updateDoc(docRef, {
-    ...updates,
-    updatedAt: serverTimestamp(),
+/**
+ * Apply a status transition with validation + auditing. Throws on an illegal
+ * transition (the rules would also reject it, but we fail fast client-side).
+ */
+export async function transitionStatus(ticket, toStatus, actor, extra = {}) {
+  if (!canTransition(ticket.status, toStatus)) {
+    throw new Error(`Illegal transition: ${ticket.status} → ${toStatus}`);
+  }
+  const updates = { status: toStatus, updatedAt: serverTimestamp(), ...extra };
+
+  if (toStatus === "Resolved" && !ticket.resolvedAt) {
+    updates.resolvedAt = serverTimestamp();
+  }
+  if (toStatus === "Closed" && !ticket.closedAt) {
+    updates.closedAt = serverTimestamp();
+  }
+  if (toStatus === "Reopened") {
+    updates.resolvedAt = null;
+    updates.requesterConfirmed = false;
+  }
+
+  await updateDoc(doc(db, "tickets", ticket.id), updates);
+  await addEvent(ticket.id, actor, {
+    eventType: "ticket.status_changed",
+    summary: `Status ${ticket.status} → ${toStatus}`,
+    previous: ticket.status,
+    next: toStatus,
+    reason: extra.reason ?? null,
+  });
+  await logAudit(actor, {
+    eventType: "ticket.status_changed",
+    targetType: "ticket",
+    targetId: ticket.id,
+    previousValue: ticket.status,
+    newValue: toStatus,
+    reason: extra.reason ?? null,
   });
 }
 
-export async function addTicketNote(ticketId, noteData) {
-  const docRef = doc(db, "tickets", ticketId);
-
-  await updateDoc(docRef, {
-    notes: arrayUnion(noteData),
+export async function assignTicket(ticket, tech, actor) {
+  await updateDoc(doc(db, "tickets", ticket.id), {
+    assignedTechUid: tech.uid,
+    assignedTechName: tech.displayName ?? tech.email ?? tech.uid,
+    status: ticket.status === "New" ? "Assigned" : ticket.status,
     updatedAt: serverTimestamp(),
+  });
+  await addEvent(ticket.id, actor, {
+    eventType: "ticket.assigned",
+    summary: `Assigned to ${tech.displayName ?? tech.email}`,
+  });
+  await logAudit(actor, {
+    eventType: "ticket.assigned",
+    targetType: "ticket",
+    targetId: ticket.id,
+    newValue: tech.uid,
   });
 }
 
-export async function getTicketStats() {
-  const tickets = await getAllTickets();
-
-  return {
-    total: tickets.length,
-    open: tickets.filter((ticket) => ticket.status === "Open").length,
-    inProgress: tickets.filter((ticket) => ticket.status === "In Progress").length,
-    resolved: tickets.filter((ticket) => ticket.status === "Resolved").length,
-    highPriority: tickets.filter((ticket) => ticket.priority === "High").length,
-  };
+export async function recordFirstResponse(ticket, actor) {
+  if (ticket.firstResponseAt) return;
+  await updateDoc(doc(db, "tickets", ticket.id), {
+    firstResponseAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  await addEvent(ticket.id, actor, {
+    eventType: "ticket.first_response",
+    summary: "First response recorded",
+  });
 }
+
+export async function escalateTicket(ticket, { toGroup, toLevel, handoff }, actor) {
+  await updateDoc(doc(db, "tickets", ticket.id), {
+    status: "Escalated",
+    supportGroup: toGroup,
+    escalationLevel: toLevel ?? (ticket.escalationLevel ?? 0) + 1,
+    updatedAt: serverTimestamp(),
+  });
+  await addEvent(ticket.id, actor, {
+    eventType: "ticket.escalated",
+    summary: `Escalated to ${toGroup}`,
+    details: handoff ?? null,
+  });
+  await logAudit(actor, {
+    eventType: "ticket.escalated",
+    targetType: "ticket",
+    targetId: ticket.id,
+    previousValue: ticket.supportGroup,
+    newValue: toGroup,
+  });
+}
+
+export async function setPriorityFields(ticket, { impact, urgency }, actor) {
+  const priority = derivePriority(impact, urgency);
+  const deadlines = computeDeadlines(new Date(), priority, DEFAULT_SLA_POLICY);
+  await updateDoc(doc(db, "tickets", ticket.id), {
+    impact,
+    urgency,
+    priority,
+    slaResponseDueAt: deadlines.responseDueAt,
+    slaResolutionDueAt: deadlines.resolutionDueAt,
+    updatedAt: serverTimestamp(),
+  });
+  await addEvent(ticket.id, actor, {
+    eventType: "ticket.priority_changed",
+    summary: `Priority set to ${priority} (impact ${impact}/urgency ${urgency})`,
+    previous: ticket.priority,
+    next: priority,
+  });
+  await logAudit(actor, {
+    eventType: "ticket.priority_changed",
+    targetType: "ticket",
+    targetId: ticket.id,
+    previousValue: ticket.priority,
+    newValue: priority,
+  });
+}
+
+// ---- events (immutable per-ticket timeline) ----
+export async function addEvent(ticketId, actor, event) {
+  const eventsCol = collection(db, "tickets", ticketId, "events");
+  await addDoc(eventsCol, {
+    actorUid: actor.uid,
+    actorName: actor.displayName ?? actor.email ?? actor.uid,
+    actorRole: actor.role ?? null,
+    at: serverTimestamp(),
+    ...event,
+  });
+}
+
+export async function getTicketEvents(ticketId) {
+  const eventsCol = collection(db, "tickets", ticketId, "events");
+  const snap = await getDocs(query(eventsCol, orderBy("at", "asc")));
+  return mapDocs(snap);
+}
+
+// ---- notes (internal vs requester-facing) ----
+export async function addNote(ticketId, actor, { body, visibility }) {
+  const notesCol = collection(db, "tickets", ticketId, "notes");
+  const ref = await addDoc(notesCol, {
+    authorUid: actor.uid,
+    authorName: actor.displayName ?? actor.email ?? actor.uid,
+    authorRole: actor.role ?? null,
+    body,
+    visibility: visibility === "requester" ? "requester" : "internal",
+    at: serverTimestamp(),
+  });
+  await addEvent(ticketId, actor, {
+    eventType: "ticket.note_added",
+    summary: visibility === "requester" ? "Requester-facing update added" : "Internal note added",
+  });
+  return ref.id;
+}
+
+export async function getTicketNotes(ticketId) {
+  const notesCol = collection(db, "tickets", ticketId, "notes");
+  const snap = await getDocs(query(notesCol, orderBy("at", "asc")));
+  return mapDocs(snap);
+}
+
+// ---- requester actions ----
+// These only touch the fields firestore.rules allows a requester to change and
+// deliberately do NOT write to auditLogs (which is staff-only). They record a
+// ticket event, which the requester is permitted to append.
+export async function confirmResolution(ticket, actor) {
+  await updateDoc(doc(db, "tickets", ticket.id), {
+    status: "Closed",
+    requesterConfirmed: true,
+    updatedAt: serverTimestamp(),
+  });
+  if (actor?.uid) {
+    await addEvent(ticket.id, actor, {
+      eventType: "ticket.requester_confirmed",
+      summary: "Requester confirmed resolution — ticket closed",
+    });
+  }
+}
+
+export async function reopenByRequester(ticket, actor) {
+  await updateDoc(doc(db, "tickets", ticket.id), {
+    status: "Reopened",
+    requesterConfirmed: false,
+    updatedAt: serverTimestamp(),
+  });
+  if (actor?.uid) {
+    await addEvent(ticket.id, actor, {
+      eventType: "ticket.reopened",
+      summary: "Requester reopened the ticket",
+    });
+  }
+}
+
+export { collectionGroup, qlimit, setDoc };
