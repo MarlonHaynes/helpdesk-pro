@@ -79,6 +79,10 @@
 .bar-track { background: var(--surface-2); border-radius: 999px; height: 9px; overflow: hidden; }
 .bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .bar-value { text-align: right; color: var(--text-muted); }
+.barbtn { width: 100%; background: none; border: none; cursor: pointer; padding: 4px 0; border-radius: 6px; }
+.barbtn:hover { background: var(--surface-1); }
+.bar-active .bar-fill { background: var(--teal); }
+.bar-active .bar-label { font-weight: 700; color: var(--text-strong); }
 .prio-row { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .prio-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; color: var(--text-strong); }
 .age-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
@@ -238,6 +242,15 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .notif-item:hover { background: var(--surface-1); }
 .notif-item.unread { background: var(--accent-light); font-weight: 600; color: var(--text-strong); }
 .notif-empty { padding: 18px 14px; color: var(--text-muted); font-size: 0.86rem; text-align: center; }
+
+/* ---- Guided tour ---- */
+.tour { list-style: none; display: flex; flex-direction: column; gap: var(--space-3); }
+.tour-step { display: flex; gap: var(--space-3); padding: var(--space-4); background: var(--surface-0); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-xs); }
+.tour-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.tour-body { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.tour-body h3 { color: var(--text-strong); }
+.bullets { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; color: var(--text-base); }
+.hero-note { font-size: 0.82rem; color: var(--text-muted); margin-top: var(--space-2); }
 
 /* ---- Responsive ---- */
 @media (max-width: 900px) {

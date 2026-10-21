@@ -10,6 +10,7 @@ import NotificationCenter from "./NotificationCenter";
 // as fake links.
 const NAV = [
   { to: "/app", label: "Dashboard", icon: "grid", end: true },
+  { to: "/app/guide", label: "Guided Demo", icon: "map" },
   { to: "/app/tickets", label: "Ticket Queue", icon: "inbox", perm: P.TICKET_VIEW_ALL },
   { to: "/app/my-tickets", label: "My Tickets", icon: "ticket", perm: P.TICKET_VIEW_OWN },
   { to: "/app/submit", label: "Submit Request", icon: "plus", perm: P.TICKET_CREATE },
@@ -18,6 +19,7 @@ const NAV = [
   { to: "/app/assets", label: "Assets", icon: "monitor", perm: P.ASSET_VIEW },
   { to: "/app/identity", label: "Identity Lab", icon: "users", perm: P.IDENTITY_VIEW },
   { to: "/app/approvals", label: "Approvals", icon: "check", perm: P.APPROVAL_REQUEST },
+  { to: "/app/reports", label: "Reports", icon: "chart", perm: P.REPORTS_TEAM },
   { to: "/app/audit", label: "Audit Log", icon: "shield", perm: P.ADMIN_AUDIT },
 ];
 
@@ -36,6 +38,7 @@ function Icon({ name }) {
     check: "M4 12l5 5L20 6",
     bell: "M6 8a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7M10 21h4",
     chart: "M4 20V10M10 20V4M16 20v-7M22 20H2",
+    map: "M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3zM9 3v15M15 6v15",
   };
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

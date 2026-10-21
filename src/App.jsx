@@ -18,6 +18,8 @@ import AssetsPage from "./pages/AssetsPage";
 import AssetDetailPage from "./pages/AssetDetailPage";
 import IdentityLabPage from "./pages/IdentityLabPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
+import ReportsPage from "./pages/ReportsPage";
+import GuidedTourPage from "./pages/GuidedTourPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { PERMISSIONS as P } from "./auth/roles";
 
@@ -40,6 +42,7 @@ export default function App() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="guide" element={<GuidedTourPage />} />
         <Route
           path="tickets"
           element={
@@ -89,6 +92,14 @@ export default function App() {
           element={
             <ProtectedRoute permission={P.APPROVAL_REQUEST}>
               <ApprovalsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <ProtectedRoute permission={P.REPORTS_TEAM}>
+              <ReportsPage />
             </ProtectedRoute>
           }
         />
