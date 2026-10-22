@@ -36,3 +36,21 @@ firestore-debug.log
 ui-debug.log
 service-account*.json
 *-service-account*.json
+
+
+# Additional environment protection
+.env.*
+!.env.example
+
+# Firebase private credentials
+sa.json
+*adminsdk*.json
+
+# Private keys and certificates
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Local Claude Code configuration
+.claude/settings.local.json

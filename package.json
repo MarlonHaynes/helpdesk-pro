@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run src",
     "test:watch": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore \"vitest run tests/rules\"",
+    "test:rules": "firebase emulators:exec --only firestore,storage \"vitest run tests/rules\"",
     "emulators": "firebase emulators:start",
     "seed": "node scripts/seed.js"
   },

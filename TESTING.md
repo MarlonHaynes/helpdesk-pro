@@ -21,7 +21,7 @@ Current result: **36 unit tests passing.**
 
 ## Security rules tests (`npm run test:rules`)
 
-`tests/rules/firestore.rules.test.js` runs against the Firestore emulator via
+The `tests/rules/` suite runs against the Firestore **and** Storage emulators via
 `firebase emulators:exec`, asserting authorized **and** unauthorized behavior:
 
 - employee can open their own ticket with a server-consistent priority
@@ -34,6 +34,17 @@ Current result: **36 unit tests passing.**
 - asset/config collections are role-gated
 - knowledge-base visibility + feedback subcollection
 - approvals (no self-approval), simulated directory ops (L2+), notifications
+- **ticket creation payload** (`ticketCreate.rules.test.js`): runs the real
+  `buildCreateTicketPayload()` (the exact shape `createTicket()` writes) against
+  the rules — the app payload is **accepted**, all five demo roles can open their
+  own ticket, and the old payload (carrying `assignedTechUid`/`resolvedAt`/
+  `closedAt`/`resolutionSummary`/`rootCause`), forged priority, non-New status,
+  cross-user, and anonymous creates are **rejected**
+- **ticket attachments** (`storage.rules.test.js`): ticket owner and staff can
+  upload/read; a different requester and anonymous users are **blocked**;
+  disallowed content types and > 10 MB uploads are **rejected**; requesters
+  cannot delete; the legacy flat `ticket-screenshots/` path is staff-only.
+  Ownership is proven by a cross-service `firestore.get` inside the rules.
 - **end-to-end lifecycle** (`lifecycle.test.js`): employee opens → L1 assigns/
   responds/escalates → L2 resolves → employee confirms, through the real rules,
   asserting final state + event/audit trail
@@ -42,9 +53,9 @@ Current result: **36 unit tests passing.**
 npm run test:rules
 ```
 
-Current result: **37 tests passing** across 2 files. Requires a JDK (Firestore
-emulator). Test files run sequentially (`fileParallelism: false`) because they
-share one emulator and call `clearFirestore()`.
+Current result: **58 tests passing** across 4 files. Requires a JDK (Firestore +
+Storage emulators). Test files run sequentially (`fileParallelism: false`)
+because they share one emulator and call `clearFirestore()`/`clearStorage()`.
 
 > The emulator uses Firestore port **8089** (8080 was occupied during
 > development); see `firebase.json`. The tests read `FIRESTORE_EMULATOR_HOST`
@@ -61,7 +72,4 @@ npm run build     # Vite production build — succeeds
 
 Full **browser** E2E (e.g. Playwright driving a real browser) is not included.
 The runnable emulator-backed `lifecycle.test.js` covers the critical journey at
-the rules+data layer. In-browser verification during development was limited to
-the dev server serving/transforming the app (the Claude browser extension was
-not connected in the build environment). Run a manual click-through per
-[DEMO_GUIDE.md](DEMO_GUIDE.md) in a browser before presenting.
+the rules+data layer. During development, the application was verified through automated tests, production builds, and development server checks. A complete interactive browser walkthrough has not yet been performed. Follow DEMO_GUIDE.md to manually verify all features before presenting the application.

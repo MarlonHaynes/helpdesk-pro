@@ -40,8 +40,23 @@ Five roles live in the Firebase Auth **custom claim** `role`:
   per-user notifications, and simulated directory users (operate: L2+).
 - **Default deny** for any unmatched path.
 
-`storage.rules` restricts attachments to images/PDF under 10 MB and limits reads
-to signed-in users (deletes to staff).
+### What the rules enforce (`storage.rules`)
+
+- **Ticket attachments** live under `tickets/{ticketId}/...`. Authorization
+  mirrors the Firestore model: **support staff** may read/write/delete any
+  ticket's files, while the ticket's **own requester** may read and upload only
+  on their ticket. Ownership is verified server-side with a cross-service
+  `firestore.get` of the ticket document — not trusted from the client — so a
+  requester cannot read another requester's attachment by guessing a storage
+  path. Deletes are staff-only (requesters cannot destroy evidence).
+- **Upload validation** — images/PDF only, under 10 MB; other content types are
+  rejected even for the owner.
+- **Legacy flat path** (`ticket-screenshots/`) has no ticket association, so it
+  is restricted entirely to staff rather than exposed to every signed-in user.
+- **Default deny** for any unmatched path.
+
+Cross-service Firestore lookups are a built-in Storage Rules feature and add no
+cost on the Firebase Spark (free) tier.
 
 ## Fixes relative to the original app
 
@@ -53,6 +68,7 @@ to signed-in users (deletes to staff).
 | Client set any field (status/priority) | Priority recomputed & transitions validated in rules |
 | No audit trail | Append-only, tamper-proof `auditLogs` + per-ticket events |
 | No rules in source control | `firestore.rules` / `storage.rules` + rules test suite |
+| Any signed-in user could read/write any ticket's attachments | Storage reads/uploads scoped to the ticket owner or staff via cross-service ownership check |
 
 ## Known limitations (free-tier design)
 
@@ -69,7 +85,8 @@ to signed-in users (deletes to staff).
 
 ## Testing the rules
 
-`npm run test:rules` runs `tests/rules/firestore.rules.test.js` against the
-Firestore emulator, asserting both authorized **and** unauthorized behavior
-(forged priority, cross-user reads, illegal transitions, audit tampering,
-role-gated collections).
+`npm run test:rules` runs the `tests/rules/` suite against the Firestore **and**
+Storage emulators, asserting both authorized **and** unauthorized behavior:
+forged priority, cross-user reads, illegal transitions, audit tampering,
+role-gated collections, and — for attachments — cross-requester read/upload
+attempts, oversized/disallowed uploads, and owner delete attempts.

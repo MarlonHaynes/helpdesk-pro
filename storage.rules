@@ -3,8 +3,20 @@ rules_version = '2';
 // =============================================================================
 // HelpDesk Pro — Firebase Storage security rules
 // =============================================================================
-// Ticket attachments live under tickets/{ticketId}/... . Role comes from the
-// custom auth claim `request.auth.token.role`.
+// Ticket attachments live under tickets/{ticketId}/... where {ticketId} is the
+// Firestore ticket document ID. Authorization mirrors firestore.rules:
+//
+//   * Staff (l1 | l2 | l3 | administrator) may read/write/delete any ticket's
+//     attachments — technicians work tickets they don't own.
+//   * The ticket's own requester may read and upload attachments on THEIR ticket
+//     only. Ownership is verified server-side by reading the ticket document
+//     from Firestore (firestore.get) — never trusted from the client.
+//
+// This is the real enforcement layer. Reading another requester's attachments by
+// guessing a storage path is denied here, not merely hidden in the UI.
+//
+// Cross-service Firestore lookups are a built-in Storage Rules feature and cost
+// nothing extra on the Firebase Spark (free) tier.
 // =============================================================================
 
 service firebase.storage {
@@ -14,6 +26,8 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Role comes from the custom auth claim set by the Admin SDK, never the
+    // client. Mirrors isTech()/isStaff() in firestore.rules.
     function isStaff() {
       return isSignedIn() &&
         request.auth.token.role in ["l1", "l2", "l3", "administrator"];
@@ -22,25 +36,44 @@ service firebase.storage {
     // Validate uploaded attachments: images/pdf only, max 10 MB.
     function validAttachment() {
       return request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType != null
         && (request.resource.contentType.matches("image/.*")
             || request.resource.contentType == "application/pdf");
     }
 
-    // Ticket attachments. Any signed-in user may upload (requesters attaching
-    // evidence to their own ticket, staff attaching working files). Reads are
-    // limited to signed-in users; staff can read everything, and the client is
-    // responsible for only surfacing a requester's own ticket media. Writes are
-    // validated for type/size here.
+    // The ticket document, read from Firestore for ownership checks.
+    function ticketDoc(ticketId) {
+      return firestore.get(/databases/(default)/documents/tickets/$(ticketId));
+    }
+
+    function ticketExists(ticketId) {
+      return firestore.exists(/databases/(default)/documents/tickets/$(ticketId));
+    }
+
+    // The signed-in user is the requester who opened this ticket.
+    function ownsTicket(ticketId) {
+      return isSignedIn()
+        && ticketExists(ticketId)
+        && ticketDoc(ticketId).data.requesterUid == request.auth.uid;
+    }
+
+    // Ticket attachments. Reads and uploads require being either support staff
+    // or the ticket's own requester; the requester's claim to the ticket is
+    // verified against Firestore. Uploads are additionally type/size validated.
+    // Deletes are staff-only (requesters cannot destroy evidence on a ticket).
     match /tickets/{ticketId}/{fileName} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && validAttachment();
+      allow read: if isStaff() || ownsTicket(ticketId);
+      allow create, update: if validAttachment()
+        && (isStaff() || ownsTicket(ticketId));
       allow delete: if isStaff();
     }
 
-    // Legacy path from the original app (pre-upgrade screenshots).
+    // Legacy flat path from the original app (pre-upgrade screenshots). It has no
+    // ticket association, so per-owner authorization is impossible. Restrict it
+    // entirely to support staff rather than leaking it to every signed-in user.
     match /ticket-screenshots/{fileName} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && validAttachment();
+      allow read: if isStaff();
+      allow write: if isStaff() && validAttachment();
       allow delete: if isStaff();
     }
 
